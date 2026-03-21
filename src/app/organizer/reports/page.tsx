@@ -267,7 +267,7 @@ export default function OrganizerReportsPage() {
                       const hourData = reports.checkInPattern?.find((p: any) => p.hour === hour)
                       const checkins = hourData?.checkins || 0
                       const maxHeight = 100
-                      const height = checkins > 0 ? Math.max((checkins / Math.max(...reports.checkInPattern.map((p: any) => p.checkins))) * maxHeight, 10) : 0
+                      const height = checkins > 0 && reports.checkInPattern ? Math.max((checkins / Math.max(...reports.checkInPattern.map((p: any) => p.checkins))) * maxHeight, 10) : 0
                       
                       return (
                         <div key={hour} className="text-center">

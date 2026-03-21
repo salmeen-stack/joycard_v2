@@ -1,10 +1,10 @@
 'use client'
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { motion } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-export default function ManualScanPage() {
+function ManualScanContent() {
   const [scanning, setScanning] = useState(false)
   const [lastScan, setLastScan] = useState<{valid: boolean; message: string; guest?: any} | null>(null)
   const sp = useSearchParams()
@@ -114,5 +114,13 @@ export default function ManualScanPage() {
         </motion.div>
       )}
     </div>
+  )
+}
+
+export default function ManualScanPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="text-cream">Loading...</div></div>}>
+      <ManualScanContent />
+    </Suspense>
   )
 }

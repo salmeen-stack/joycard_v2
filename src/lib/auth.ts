@@ -44,7 +44,7 @@ export function verifyToken(token: string): JWTPayload | null {
     console.log('Token decoded successfully:', decoded)
     return decoded
   } catch (error) {
-    console.error('Token verification failed:', error.message)
+    console.error('Token verification failed:', error instanceof Error ? error.message : String(error))
     return null
   }
 }

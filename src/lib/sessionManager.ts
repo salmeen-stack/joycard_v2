@@ -52,7 +52,7 @@ export function getCurrentUser(req: NextRequest) {
           return user
         }
       } catch (error) {
-        console.error(`Token verification error for ${role}:`, error.message)
+        console.error(`Token verification error for ${role}:`, error instanceof Error ? error.message : String(error))
       }
     }
   }
