@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
-import { verifyPassword, signToken } from '@/lib/auth'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { JWTPayload, verifyPassword, signToken } from '@/lib/auth'
 import { setRoleToken } from '@/lib/sessionManager'
+
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {

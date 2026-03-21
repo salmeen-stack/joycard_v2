@@ -3,6 +3,9 @@ import sql from '@/lib/db'
 import { hashPassword, signToken } from '@/lib/auth'
 import { setRoleToken } from '@/lib/sessionManager'
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()

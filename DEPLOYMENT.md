@@ -25,6 +25,9 @@ Add these in Vercel dashboard:
 ```
 DATABASE_URL=your_neon_database_url
 JWT_SECRET=your_random_secret_key
+CLOUDINARY_CLOUD_NAME=dxqtyfaxm
+CLOUDINARY_API_KEY=641815295958726
+CLOUDINARY_API_SECRET=b0kTcKiK5EoCFmEf8OZT47iIP-w
 ```
 
 ### Step 4: Deploy
@@ -67,6 +70,7 @@ Click "Deploy" - Vercel will build and deploy your app!
 ### Environment Variables
 - `DATABASE_URL`: PostgreSQL connection string
 - `JWT_SECRET`: Secret for JWT tokens
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`: Cloudinary configuration
 
 ### Custom Domain (Optional)
 1. Go to Vercel dashboard
@@ -110,6 +114,8 @@ Click "Deploy" - Vercel will build and deploy your app!
 - **Build Errors**: Check dependency versions
 - **Camera Access**: Ensure HTTPS (automatic on Vercel)
 - **File Uploads**: Check storage configuration
+- **Image Upload Issues**: Check Cloudinary configuration
+- **Camera Issues**: Check camera permissions and HTTPS
 
 ### Support
 - Vercel documentation

@@ -2,8 +2,8 @@
 import { useEffect, useState, useCallback, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
-import { useDropzone } from 'react-dropzone'
 import toast from 'react-hot-toast'
+import DirectUpload from '@/components/DirectUpload'
 
 interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_email?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string }
 interface Asgn  { event_id:number; event_title:string }
@@ -17,7 +17,6 @@ function Content() {
   const [active,   setActive]   = useState<Guest|null>(null)
   const [cardUrl,  setCardUrl]  = useState('')
   const [preview,  setPreview]  = useState('')
-  const [uploading,setUploading]= useState(false)
   const [sending,  setSending]  = useState(false)
 
   const load = useCallback(async () => {
@@ -32,22 +31,11 @@ function Content() {
   },[selEvent])
   useEffect(()=>{ load() },[load])
 
-  const onDrop = useCallback(async (files: File[]) => {
-    if (!files[0]||!active) return
-    setUploading(true)
-    try {
-      const fd = new FormData(); fd.append('card', files[0])
-      const r  = await fetch('/api/invitations/upload',{method:'POST',body:fd})
-      const d  = await r.json()
-      if (!r.ok) { toast.error(d.error); return }
-      setCardUrl(d.card_url); setPreview(URL.createObjectURL(files[0]))
-      toast.success('Card uploaded!')
-    } finally { setUploading(false) }
-  },[active])
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop, accept:{'image/*':['.jpg','.jpeg','.png','.webp']}, maxFiles:1, disabled:uploading,
-  })
+  const onUploadComplete = useCallback((url: string) => {
+    setCardUrl(url)
+    setPreview(url)
+    toast.success('Card uploaded!')
+  }, [])
 
   async function send(email:boolean, wa:boolean) {
     if (!active?.inv_id) { toast.error('No invitation found'); return }
@@ -102,11 +90,10 @@ function Content() {
                       className="absolute top-2 right-2 bg-navy-900/80 text-cream/50 hover:text-rose-400 rounded-full w-6 h-6 flex items-center justify-center text-xs">✕</button>
                   </div>
                 ) : (
-                  <div {...getRootProps()} className={`border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all ${isDragActive?'border-gold bg-gold/5':'border-white/10 hover:border-gold/30'}`}>
-                    <input {...getInputProps()} />
-                    <p className="text-cream/35 text-sm">{uploading?'Uploading…':'Drop card image or click to upload'}</p>
-                    <p className="text-cream/20 text-xs mt-1">JPG, PNG, WebP · Max 10 MB</p>
-                  </div>
+                  <DirectUpload 
+                    onUploadComplete={onUploadComplete}
+                    className="border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all hover:border-gold/30"
+                  />
                 )}
               </div>
 

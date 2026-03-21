@@ -58,16 +58,9 @@ function Content() {
       const scanner = new Html5Qrcode('qr-reader')
       scanRef.current = scanner
       
-      // Enhanced camera config for mobile and production
-      const config = {
-        facingMode: 'environment', // Use back camera
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-      
       await scanner.start(
-        config,
-        {fps:10, qrbox:{width:260,height:260}},
+        { facingMode: 'environment' }, // First argument: camera config only
+        { fps: 10, qrbox: { width: 260, height: 260 } }, // Second argument: scanner config
         async (text) => {
           const m = text.match(/\/invite\/([a-f0-9-]{36})/)||text.match(/\/verify\/([a-f0-9-]{36})/)
           await handleScan(m?m[1]:text)
