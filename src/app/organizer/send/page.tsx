@@ -18,6 +18,7 @@ function Content() {
   const [cardUrl,  setCardUrl]  = useState('')
   const [preview,  setPreview]  = useState('')
   const [sending,  setSending]  = useState(false)
+  const [uploading, setUploading] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -36,6 +37,20 @@ function Content() {
     setPreview(url)
     toast.success('Card uploaded!')
   }, [])
+
+  const onDrop = useCallback(async (files: File[]) => {
+    if (!files[0]||!active) return
+    setUploading(true)
+    try {
+      const formData = new FormData(); 
+      formData.append('file', files[0])
+      const r  = await fetch('/api/invitations/upload',{method:'POST',body:formData})
+      const d  = await r.json()
+      if (!d.success) { toast.error(d.error); return }
+      setCardUrl(d.url); setPreview(d.url)
+      toast.success('Card uploaded!')
+    } finally { setUploading(false) }
+  },[active])
 
   async function send(email:boolean, wa:boolean) {
     if (!active?.inv_id) { toast.error('No invitation found'); return }
