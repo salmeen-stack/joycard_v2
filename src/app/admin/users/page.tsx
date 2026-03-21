@@ -4,14 +4,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
-interface User { id:number; name:string; email:string; role:string; created_at:string }
+interface User { id:number; name:string; email:string; phone:string; role:string; created_at:string }
 
 export default function AdminUsers() {
   const [users,   setUsers]   = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [modal,   setModal]   = useState(false)
   const [filter,  setFilter]  = useState('all')
-  const [form,    setForm]    = useState({ name:'', email:'', password:'', role:'organizer' })
+  const [form,    setForm]    = useState({ name:'', email:'', phone:'+255', password:'', role:'organizer' })
   const [saving,  setSaving]  = useState(false)
 
   const load = async () => {
@@ -30,7 +30,7 @@ export default function AdminUsers() {
       const d = await r.json()
       if (!r.ok) { toast.error(d.error); return }
       toast.success('User created!'); setModal(false)
-      setForm({ name:'', email:'', password:'', role:'organizer' }); load()
+      setForm({ name:'', email:'', phone:'+255', password:'', role:'organizer' }); load()
     } finally { setSaving(false) }
   }
 
@@ -67,6 +67,7 @@ export default function AdminUsers() {
               <form onSubmit={create} className="space-y-4">
                 <div><label className="label">Full Name</label><input className="input" required value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="John Smith" /></div>
                 <div><label className="label">Email</label><input type="email" className="input" required value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="john@example.com" /></div>
+                <div><label className="label">Phone Number</label><input type="tel" className="input" required value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="+255123456789" /></div>
                 <div><label className="label">Password</label><input type="password" className="input" required minLength={6} value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="Min 6 characters" /></div>
                 <div><label className="label">Role</label>
                   <select className="input" value={form.role} onChange={e=>setForm(f=>({...f,role:e.target.value}))}>
@@ -91,15 +92,18 @@ export default function AdminUsers() {
           <div className="p-16 text-center"><p className="text-3xl mb-3">👥</p><p className="font-display text-lg text-cream">No users found</p></div>
         ) : (
           <table className="table">
-            <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th>Action</th></tr></thead>
+            <thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th><th>Action</th></tr></thead>
             <tbody>
               {users.map(u=>(
                 <tr key={u.id}>
                   <td className="font-medium text-cream">{u.name}</td>
                   <td className="text-cream/50">{u.email}</td>
+                  <td className="text-cream/50">{u.phone}</td>
                   <td><span className={`badge ${BADGE[u.role]||'badge-slate'}`}>{u.role}</span></td>
-                  <td className="text-cream/35 text-xs">{format(new Date(u.created_at),'MMM d, yyyy')}</td>
-                  <td><button onClick={()=>del(u.id,u.name)} className="text-cream/30 hover:text-rose-400 transition-colors text-sm">Delete</button></td>
+                  <td className="text-cream/30 text-sm">{format(new Date(u.created_at), 'MMM d, yyyy')}</td>
+                  <td>
+                    <button onClick={()=>del(u.id, u.name)} className="text-rose-400 hover:text-rose-300 text-sm">Delete</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

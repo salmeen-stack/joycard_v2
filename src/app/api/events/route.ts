@@ -7,6 +7,14 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   try {
+    const { searchParams } = new URL(req.url)
+    const search = searchParams.get('search') || ''
+
+    let whereClause = ''
+    if (search) {
+      whereClause = `WHERE e.title ILIKE '%${search}%' OR e.location ILIKE '%${search}%' OR e.date::text ILIKE '%${search}%'`
+    }
+
     const events = await sql`
       SELECT e.*,
         COUNT(DISTINCT g.id)::int  AS total_guests,
@@ -14,6 +22,7 @@ export async function GET(req: NextRequest) {
       FROM events e
       LEFT JOIN guests g ON g.event_id = e.id
       LEFT JOIN invitations i ON i.guest_id = g.id
+      ${whereClause}
       GROUP BY e.id
       ORDER BY e.date DESC
     `

@@ -35,22 +35,30 @@ function Content() {
 
   async function start() {
     setScanning(true); setError('')
+    
     try {
+      // Check if we're on HTTPS (required for camera in production)
+      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        throw new Error('Camera access requires HTTPS in production. Please ensure your site is served over HTTPS.')
+      }
+      
       // Check camera permissions first
       const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName })
-      console.log('Camera permission state:', permissions.state)
       
       if (permissions.state === 'denied') {
-        setError('Camera access denied. Please enable camera permissions in your browser settings.')
-        setScanning(false)
-        return
+        throw new Error('Camera access denied. Please enable camera permissions in your browser settings.')
+      }
+      
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        throw new Error('Camera API not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.')
       }
       
       const { Html5Qrcode } = await import('html5-qrcode')
       const scanner = new Html5Qrcode('qr-reader')
       scanRef.current = scanner
       
-      // Enhanced camera config for mobile
+      // Enhanced camera config for mobile and production
       const config = {
         facingMode: 'environment', // Use back camera
         width: { ideal: 1280 },
@@ -75,14 +83,19 @@ function Content() {
       console.error('Scanner start failed:', err)
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       
+      // Enhanced error messages for production
       if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
-        setError('Camera access denied. Please allow camera access and try again.')
+        setError('📷 Camera access denied. Please allow camera access and try again.')
       } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('no camera')) {
-        setError('No camera found. Please ensure your device has a camera.')
+        setError('📷 No camera found. Please ensure your device has a camera.')
       } else if (errorMsg.includes('NotReadableError') || errorMsg.includes('already in use')) {
-        setError('Camera is already in use by another application.')
+        setError('📷 Camera is already in use by another application.')
+      } else if (errorMsg.includes('HTTPS') || errorMsg.includes('secure')) {
+        setError('🔒 Camera requires HTTPS connection. Please ensure your site is served over HTTPS.')
+      } else if (errorMsg.includes('not supported') || errorMsg.includes('getUserMedia')) {
+        setError('🌐 Camera API not supported. Please use Chrome, Firefox, or Safari on a mobile device.')
       } else {
-        setError(`Camera error: ${errorMsg}`)
+        setError(`📷 Camera error: ${errorMsg}`)
       }
       setScanning(false)
     }
@@ -117,7 +130,17 @@ function Content() {
             </div>
             <h3 className="font-display text-xl text-cream mb-2">Camera Ready</h3>
             <p className="text-cream/35 text-sm text-center mb-6">Press start to activate the QR scanner.</p>
-            {error && <p className="text-rose-400 text-sm bg-rose-400/10 border border-rose-400/20 rounded-xl px-4 py-2 mb-4 text-center">{error}</p>}
+            {error && (
+              <div className="mb-6">
+                <p className="text-rose-400 text-sm bg-rose-400/10 border border-rose-400/20 rounded-xl px-4 py-2 mb-4 text-center">{error}</p>
+                <div className="text-center">
+                  <p className="text-cream/35 text-xs mb-3">Having camera issues?</p>
+                  <a href={`/staff/scan-manual${eventId ? '?event=' + eventId : ''}`} className="text-gold hover:text-gold/70 text-sm underline">
+                    Try Manual Entry Instead
+                  </a>
+                </div>
+              </div>
+            )}
             <button onClick={start} className="btn-gold px-12 py-4">Start Scanner</button>
           </div>
         )}

@@ -165,6 +165,7 @@ export default function StaffDashboard() {
   const [loading, setLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<{name: string, email: string, role: string} | null>(null)
   const [currentAssignment, setCurrentAssignment] = useState<boolean>(false)
+  const [searchTerm, setSearchTerm] = useState('')
 
   const refreshEvents = () => {
     fetch('/api/staff/events')
@@ -194,6 +195,22 @@ export default function StaffDashboard() {
   const upcoming = evs.filter(e=>isFuture(new Date(e.event_date))&&!isToday(new Date(e.event_date)))
   const past     = evs.filter(e=>isPast(new Date(e.event_date))&&!isToday(new Date(e.event_date)))
 
+  // Filter events based on search term
+  const filterEvents = (events: Ev[]) => {
+    if (!searchTerm.trim()) return events
+    const term = searchTerm.toLowerCase()
+    return events.filter(event => 
+      event.event_title.toLowerCase().includes(term) ||
+      event.event_location.toLowerCase().includes(term) ||
+      format(new Date(event.event_date), 'MMM d, yyyy').toLowerCase().includes(term) ||
+      (event.description && event.description.toLowerCase().includes(term))
+    )
+  }
+
+  const filteredToday = filterEvents(today)
+  const filteredUpcoming = filterEvents(upcoming)
+  const filteredPast = filterEvents(past)
+
   return (
     <div className="p-8 max-w-4xl mx-auto">
       <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-10">
@@ -221,19 +238,66 @@ export default function StaffDashboard() {
         </div>
       </motion.div>
 
+      {/* Search Bar */}
+      <motion.div initial={{opacity:0,y:10}} animate={{opacity:1,y:0}} className="mb-8">
+        <div className="glass-gold p-4">
+          <div className="relative">
+            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-cream/40">
+              🔍
+            </span>
+            <input
+              type="text"
+              placeholder="Search events by title, location, date, or description..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input pl-12 w-full"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-cream/40 hover:text-cream transition-colors"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+          {searchTerm && (
+            <div className="mt-3 text-cream/35 text-sm">
+              Found {filteredToday.length + filteredUpcoming.length + filteredPast.length} events matching "{searchTerm}"
+            </div>
+          )}
+        </div>
+      </motion.div>
+
       {loading ? (
         <div className="space-y-4">{Array(2).fill(0).map((_,i)=><div key={i} className="glass-gold p-6 h-44 animate-pulse" />)}</div>
       ) : evs.length===0 ? (
         <div className="glass-gold p-16 text-center">
           <p className="text-4xl mb-4">📅</p>
-          <h3 className="font-display text-xl text-cream mb-2">No Upcoming Events</h3>
-          <p className="text-cream/35 text-sm">No events scheduled for today or the next 2 days.</p>
+          <h3 className="font-display text-xl text-cream mb-2">
+            {searchTerm ? 'No Matching Events' : 'No Upcoming Events'}
+          </h3>
+          <p className="text-cream/35 text-sm">
+            {searchTerm 
+              ? `No events found matching "${searchTerm}". Try different keywords.` 
+              : 'No events scheduled for today or the next 2 days.'
+            }
+          </p>
         </div>
       ) : (
         <div className="space-y-8">
-          {today.length>0    && <div><h2 className="font-display text-lg text-gold mb-4">Today</h2><div className="space-y-4">{today.map(ev=><Card key={ev.event_id} ev={ev} today onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
-          {upcoming.length>0 && <div><h2 className="font-display text-lg text-cream/60 mb-4">Upcoming</h2><div className="space-y-4">{upcoming.map(ev=><Card key={ev.event_id} ev={ev} onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
-          {past.length>0     && <div className="opacity-55"><h2 className="font-display text-lg text-cream/30 mb-4">Past</h2><div className="space-y-4">{past.map(ev=><Card key={ev.event_id} ev={ev} currentAssignment={currentAssignment} />)}</div></div>}
+          {filteredToday.length>0    && <div><h2 className="font-display text-lg text-gold mb-4">Today</h2><div className="space-y-4">{filteredToday.map(ev=><Card key={ev.event_id} ev={ev} today onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
+          {filteredUpcoming.length>0 && <div><h2 className="font-display text-lg text-cream/60 mb-4">Upcoming</h2><div className="space-y-4">{filteredUpcoming.map(ev=><Card key={ev.event_id} ev={ev} onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
+          {filteredPast.length>0     && <div className="opacity-55"><h2 className="font-display text-lg text-cream/30 mb-4">Past</h2><div className="space-y-4">{filteredPast.map(ev=><Card key={ev.event_id} ev={ev} currentAssignment={currentAssignment} />)}</div></div>}
+          {searchTerm && filteredToday.length===0 && filteredUpcoming.length===0 && filteredPast.length===0 && (
+            <div className="glass-gold p-16 text-center">
+              <p className="text-4xl mb-4">🔍</p>
+              <h3 className="font-display text-xl text-cream mb-2">No Events Found</h3>
+              <p className="text-cream/35 text-sm">
+                No events found matching "{searchTerm}". Try searching by event title, location, or date.
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

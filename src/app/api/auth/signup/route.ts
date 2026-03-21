@@ -57,19 +57,33 @@ export async function POST(req: NextRequest) {
 
     const user = result[0]
 
-    // Create JWT token
+    // For organizers and staff, do NOT auto-login - they need verification
+    if (role === 'organizer' || role === 'staff') {
+      return NextResponse.json({ 
+        success: true, 
+        message: 'Account created successfully! Please wait for admin verification before logging in.',
+        requiresVerification: true,
+        user: { 
+          id: user.id, 
+          email: user.email 
+        }
+      })
+    }
+
+    // For admin (if implemented), auto-login
     const payload = { 
       id: user.id, 
-      email: user.email, 
-      name: user.name, 
-      phone: user.phone,
-      role: user.role 
+      email: user.email,
+      name: user.name,
+      role: user.role
     }
     const token = signToken(payload)
 
     // Set cookie and respond
     const response = NextResponse.json({ 
       success: true, 
+      message: 'Account created successfully!',
+      requiresVerification: false,
       user: payload 
     })
 

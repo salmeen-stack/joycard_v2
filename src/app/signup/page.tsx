@@ -2,12 +2,14 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 
 export default function SignupPage() {
+  const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('+255')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<'organizer' | 'staff'>('organizer')
@@ -45,9 +47,28 @@ export default function SignupPage() {
         return
       }
 
-      toast.success(`Welcome to Joycard, ${data.user.name}!`)
+      // If verification is required, redirect to login immediately
+      if (data.requiresVerification) {
+        toast.success('Account created successfully! Redirecting to login...')
+        setLoading(false) // Reset loading state
+        
+        // Try Next.js router first
+        setTimeout(() => {
+          router.push('/login')
+          
+          // Fallback to window.location if router doesn't work
+          setTimeout(() => {
+            if (window.location.pathname !== '/login') {
+              window.location.href = '/login'
+            }
+          }, 500)
+        }, 100)
+        return
+      }
 
-      // Redirect based on role
+      // For admin (auto-login), show success and redirect
+      toast.success(data.message || 'Account created successfully!')
+      setLoading(false) // Reset loading state
       window.location.href = data.user.role === 'organizer' ? '/organizer' : '/staff'
 
     } catch (error) {
@@ -128,7 +149,7 @@ export default function SignupPage() {
                 required
                 value={phone}
                 onChange={e => setPhone(e.target.value)}
-                placeholder="+1234567890"
+                placeholder="+255123456789"
                 className="input"
               />
             </div>

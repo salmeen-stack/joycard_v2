@@ -9,6 +9,7 @@ export interface JWTPayload {
   email: string
   name: string
   role: UserRole
+  verified?: boolean
 }
 
 // ── Password helpers ──────────────────────────────────────────

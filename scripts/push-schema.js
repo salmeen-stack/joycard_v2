@@ -21,6 +21,7 @@ async function main() {
     email      TEXT NOT NULL UNIQUE,
     password   TEXT NOT NULL,
     role       TEXT NOT NULL CHECK (role IN ('admin','organizer','staff')),
+    verified   BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`
   await sql`CREATE INDEX idx_users_email ON users(email)`
@@ -77,8 +78,8 @@ async function main() {
   // Seed admin
   const adminPw = await bcrypt.hash('Admin@1234', 12)
   await sql`
-    INSERT INTO users (name, email, password, role)
-    VALUES ('System Admin', 'admin@joycard.com', ${adminPw}, 'admin')
+    INSERT INTO users (name, email, password, role, verified)
+    VALUES ('System Admin', 'admin@joycard.com', ${adminPw}, 'admin', TRUE)
     ON CONFLICT (email) DO NOTHING
   `
 
