@@ -97,7 +97,7 @@ function Content() {
     } finally { setSending(false) }
   }
 
-  const base = typeof window!=='undefined' ? window.location.origin : ''
+  const base = process.env.NEXT_PUBLIC_APP_URL || (typeof window!=='undefined' ? window.location.origin : '')
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
