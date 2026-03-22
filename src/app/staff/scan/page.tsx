@@ -80,6 +80,23 @@ function Content() {
       // ✅ Create scanner with error handling
       let scanner
       try {
+        // ✅ Small delay to ensure DOM is updated
+        await new Promise(resolve => setTimeout(resolve, 100))
+        
+        // ✅ Check if container exists and is visible
+        const container = document.getElementById('qr-reader')
+        if (!container) {
+          throw new Error('QR scanner container not found')
+        }
+        
+        console.log('Container found:', container)
+        console.log('Container visible:', !container.classList.contains('hidden'))
+        console.log('Container dimensions:', container.offsetWidth, 'x', container.offsetHeight)
+        
+        // ✅ Force container to be visible
+        container.style.display = 'block'
+        container.style.visibility = 'visible'
+        
         scanner = new Html5Qrcode('qr-reader')
         scanRef.current = scanner
         console.log('Scanner instance created')
@@ -211,7 +228,7 @@ function Content() {
       </div>
 
       <div className="glass-gold p-6 mb-5">
-        <div id="qr-reader" className={`w-full rounded-xl overflow-hidden ${!scanning?'hidden':''}`} style={{minHeight:300}} />
+        <div id="qr-reader" className={`w-full rounded-xl overflow-hidden ${!scanning ? 'hidden' : 'block'}`} style={{minHeight: 300, backgroundColor: '#000'}} />
         {!scanning && (
           <div className="flex flex-col items-center py-10">
             <div className="w-20 h-20 rounded-2xl bg-gold/10 border border-gold/20 flex items-center justify-center mb-6 float">
