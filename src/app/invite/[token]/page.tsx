@@ -7,7 +7,7 @@ import Link from 'next/link'
 
 interface Inv { id:number; card_url?:string; card_type:'single'|'double'; dress_code:string; qr_token:string; scanned_at?:string; guest_name:string; event_title:string; event_date:string; event_location:string }
 
-export default function InvitePage({ params }: { params: { token: string } }) {
+export default function InvitePage({ params }: { params: Promise<{ token: string }> }) {
   const [inv,     setInv]     = useState<Inv|null>(null)
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState('')
@@ -17,12 +17,13 @@ export default function InvitePage({ params }: { params: { token: string } }) {
   useEffect(()=>{
     async function load() {
       try {
-        const r = await fetch(`/api/invitations/verify/${params.token}`)
+        const { token } = await params
+        const r = await fetch(`/api/invitations/verify/${token}`)
         if (!r.ok) { setError('Invitation not found'); return }
         const d = await r.json()
         setInv(d.invitation)
         const QR = (await import('qrcode')).default
-        const url = `${window.location.origin}/invite/${params.token}`
+        const url = `${window.location.origin}/invite/${token}`
         const qrDataUrl = await QR.toDataURL(url,{ errorCorrectionLevel:'H', width:280, margin:2, color:{dark:'#0F172A',light:'#F8FAFC'} })
         setQrUrl(qrDataUrl)
       } catch (error) { 
@@ -30,7 +31,7 @@ export default function InvitePage({ params }: { params: { token: string } }) {
       } finally { setLoading(false) }
     }
     load()
-  },[params.token])
+  },[params])
 
   const handleFlip = () => {
     setFlipped(f=>!f)

@@ -88,18 +88,25 @@ function Content() {
       
       // ✅ Production-safe camera configuration with fallback
       const getCameraConfig = () => {
-        // Always return exactly one key
-        const config = { facingMode: 'environment' }
+        // ✅ Create config object with exactly one key, no spreading, no merging
+        const config = Object.freeze({ facingMode: 'environment' })
         
         // Log for debugging
         console.log('Generated camera config:', config)
         console.log('Config keys:', Object.keys(config))
         console.log('Config validation:', Object.keys(config).length === 1)
+        console.log('Config type:', typeof config)
+        console.log('Config frozen:', Object.isFrozen(config))
         
         return config
       }
       
       const cameraConfig = getCameraConfig()
+      
+      // ✅ Double validation before starting
+      console.log('Final camera config before start:', cameraConfig)
+      console.log('Final config keys:', Object.keys(cameraConfig))
+      console.log('Final config length:', Object.keys(cameraConfig).length)
       
       // ✅ Validate config before starting
       if (typeof cameraConfig !== 'object' || Object.keys(cameraConfig).length !== 1) {

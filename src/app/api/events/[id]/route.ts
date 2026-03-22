@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { requireRole, requireAuth } from '@/lib/apiAuth'
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireAuth(req)
   if (auth instanceof NextResponse) return auth
-  const id = parseInt(params.id)
-  if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  const { id } = await params
+  const eventId = parseInt(id)
+  if (isNaN(eventId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   try {
     const rows = await sql`
       SELECT e.*,
@@ -23,11 +24,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   } catch (err) { console.error(err); return NextResponse.json({ error: 'Server error' }, { status: 500 }) }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireRole(req, 'admin')
   if (auth instanceof NextResponse) return auth
-  const id = parseInt(params.id)
-  if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  const { id } = await params
+  const eventId = parseInt(id)
+  if (isNaN(eventId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   try {
     const { title, date, location, description } = await req.json()
     const rows = await sql`
@@ -43,13 +45,14 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   } catch (err) { console.error(err); return NextResponse.json({ error: 'Server error' }, { status: 500 }) }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = requireRole(req, 'admin')
   if (auth instanceof NextResponse) return auth
-  const id = parseInt(params.id)
-  if (isNaN(id)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
+  const { id } = await params
+  const eventId = parseInt(id)
+  if (isNaN(eventId)) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 })
   try {
-    await sql`DELETE FROM events WHERE id = ${id}`
+    await sql`DELETE FROM events WHERE id = ${eventId}`
     return NextResponse.json({ success: true })
   } catch (err) { console.error(err); return NextResponse.json({ error: 'Server error' }, { status: 500 }) }
 }

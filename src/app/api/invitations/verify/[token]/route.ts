@@ -3,15 +3,16 @@ import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
 
 // Public GET — guest invite card page
-export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
   try {
     const rows = await sql`
-      SELECT i.*, g.name AS guest_name, g.contact, g.channel,
-        e.title AS event_title, e.date AS event_date, e.location AS event_location, e.description
+      SELECT i.*, g.name AS guest_name, g.event_id,
+        e.title AS event_title, e.date AS event_date
       FROM invitations i
       JOIN guests g ON g.id = i.guest_id
       JOIN events e ON e.id = g.event_id
-      WHERE i.qr_token = ${params.token}
+      WHERE i.qr_token = ${token}
     `
     if (!rows.length) return NextResponse.json({ error: 'Not found' }, { status: 404 })
     return NextResponse.json({ invitation: rows[0] })
@@ -19,10 +20,11 @@ export async function GET(_req: NextRequest, { params }: { params: { token: stri
 }
 
 // Staff POST — scan and check-in
-export async function POST(req: NextRequest, { params }: { params: { token: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ token: string }> }) {
   const auth = requireRole(req, 'admin', 'staff')
   if (auth instanceof NextResponse) return auth
   const { user } = auth
+  const { token } = await params
 
   try {
     const rows = await sql`
@@ -31,7 +33,7 @@ export async function POST(req: NextRequest, { params }: { params: { token: stri
       FROM invitations i
       JOIN guests g ON g.id = i.guest_id
       JOIN events e ON e.id = g.event_id
-      WHERE i.qr_token = ${params.token}
+      WHERE i.qr_token = ${token}
     `
     if (!rows.length) {
       return NextResponse.json({ valid: false, alreadyScanned: false, message: 'Invalid QR code — not recognised.' })
