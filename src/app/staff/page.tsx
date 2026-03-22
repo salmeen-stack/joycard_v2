@@ -87,7 +87,9 @@ function Card({ ev, today, onTakeEvent, onLeaveEvent, currentAssignment }: {
   }
   
   return (
-    <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className={`glass-gold p-6 ${today?'border-gold/40':''}`}>
+    <motion.div initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} className={`glass-gold p-6 ${today?'border-gold/40':''} ${ev.assigned?'ring-2 ring-gold/30 shadow-lg shadow-gold/10':''}`}
+      style={ev.assigned ? { opacity: 1 } : {}}
+    >
       {today && (
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gold/10 border border-gold/20 mb-3">
           <span className="w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
@@ -153,7 +155,7 @@ function Card({ ev, today, onTakeEvent, onLeaveEvent, currentAssignment }: {
           disabled={taking || !!ev.assigned_to_name || currentAssignment}
           className="btn-gold w-full py-3 text-sm disabled:opacity-40"
         >
-          {taking ? 'Taking Event...' : currentAssignment ? '🚫 Already Assigned to Event' : '🎯 Take This Event'}
+          {taking ? 'Taking Event...' : currentAssignment ? '🚫 You are already assigned to another event' : '🎯 Take This Event'}
         </button>
       )}
     </motion.div>
@@ -168,18 +170,32 @@ export default function StaffDashboard() {
   const [searchTerm, setSearchTerm] = useState('')
 
   const refreshEvents = () => {
+    setLoading(true)
     fetch('/api/staff/events')
-      .then(r=>r.ok?r.json():null)
-      .then(d=> {
-        setEvs(d?.assignments||[])
-        // Check if current user is already assigned to any event in the date range
-        const hasActiveAssignment = d?.assignments?.some((event: Ev) => 
-          event.assigned
-        )
-        setCurrentAssignment(hasActiveAssignment || false)
+      .then(r => {
+        if (!r.ok) {
+          throw new Error(`HTTP error! status: ${r.status}`)
+        }
+        return r.json()
       })
-      .catch(console.error)
-      .finally(()=>setLoading(false))
+      .then(data => {
+        if (data.error) {
+          toast.error(data.error)
+          setEvs([])
+        } else {
+          setEvs(data.assignments || [])
+          // Check if current user is already assigned to any event in the date range
+          const hasActiveAssignment = data.assignments?.some((event: Ev) => 
+            event.assigned
+          )
+          setCurrentAssignment(hasActiveAssignment || false)
+        }
+      })
+      .catch(error => {
+        toast.error('Failed to load events. Please try again.')
+        setEvs([])
+      })
+      .finally(() => setLoading(false))
   }
 
   useEffect(refreshEvents, [])
@@ -195,6 +211,25 @@ export default function StaffDashboard() {
   const upcoming = evs.filter(e=>isFuture(new Date(e.event_date))&&!isToday(new Date(e.event_date)))
   const past     = evs.filter(e=>isPast(new Date(e.event_date))&&!isToday(new Date(e.event_date)))
 
+  // Sort events: assigned events first, then by date
+  const sortedToday = [...today].sort((a, b) => {
+    console.log('Sorting today events:', { a: a.event_title, aAssigned: a.assigned, b: b.event_title, bAssigned: b.assigned })
+    if (a.assigned && !b.assigned) return -1
+    if (!a.assigned && b.assigned) return 1
+    return 0
+  })
+  const sortedUpcoming = [...upcoming].sort((a, b) => {
+    console.log('Sorting upcoming events:', { a: a.event_title, aAssigned: a.assigned, b: b.event_title, bAssigned: b.assigned })
+    if (a.assigned && !b.assigned) return -1
+    if (!a.assigned && b.assigned) return 1
+    return 0
+  })
+  const sortedPast = [...past].sort((a, b) => {
+    console.log('Sorting past events:', { a: a.event_title, aAssigned: a.assigned, b: b.event_title, bAssigned: b.assigned })
+    if (a.assigned && !b.assigned) return 1
+    return 0
+  })
+
   // Filter events based on search term
   const filterEvents = (events: Ev[]) => {
     if (!searchTerm.trim()) return events
@@ -207,9 +242,9 @@ export default function StaffDashboard() {
     )
   }
 
-  const filteredToday = filterEvents(today)
-  const filteredUpcoming = filterEvents(upcoming)
-  const filteredPast = filterEvents(past)
+  const filteredToday = filterEvents(sortedToday)
+  const filteredUpcoming = filterEvents(sortedUpcoming)
+  const filteredPast = filterEvents(sortedPast)
 
   return (
     <div className="p-8 max-w-4xl mx-auto">
@@ -288,7 +323,7 @@ export default function StaffDashboard() {
         <div className="space-y-8">
           {filteredToday.length>0    && <div><h2 className="font-display text-lg text-gold mb-4">Today</h2><div className="space-y-4">{filteredToday.map(ev=><Card key={ev.event_id} ev={ev} today onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
           {filteredUpcoming.length>0 && <div><h2 className="font-display text-lg text-cream/60 mb-4">Upcoming</h2><div className="space-y-4">{filteredUpcoming.map(ev=><Card key={ev.event_id} ev={ev} onTakeEvent={refreshEvents} onLeaveEvent={refreshEvents} currentAssignment={currentAssignment} />)}</div></div>}
-          {filteredPast.length>0     && <div className="opacity-55"><h2 className="font-display text-lg text-cream/30 mb-4">Past</h2><div className="space-y-4">{filteredPast.map(ev=><Card key={ev.event_id} ev={ev} currentAssignment={currentAssignment} />)}</div></div>}
+          {filteredPast.length>0     && <div className={`${currentAssignment ? 'opacity-100' : 'opacity-55'}`}><h2 className="font-display text-lg text-cream/30 mb-4">Past</h2><div className="space-y-4">{filteredPast.map(ev=><Card key={ev.event_id} ev={ev} currentAssignment={currentAssignment} />)}</div></div>}
           {searchTerm && filteredToday.length===0 && filteredUpcoming.length===0 && filteredPast.length===0 && (
             <div className="glass-gold p-16 text-center">
               <p className="text-4xl mb-4">🔍</p>

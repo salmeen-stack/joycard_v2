@@ -3,7 +3,6 @@ import { useEffect, useState, useCallback, Suspense } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
-import DirectUpload from '@/components/DirectUpload'
 
 interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_email?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string }
 interface Asgn  { event_id:number; event_title:string }
@@ -32,25 +31,54 @@ function Content() {
   },[selEvent])
   useEffect(()=>{ load() },[load])
 
-  const onUploadComplete = useCallback((url: string) => {
-    setCardUrl(url)
-    setPreview(url)
-    toast.success('Card uploaded!')
-  }, [])
-
-  const onDrop = useCallback(async (files: File[]) => {
-    if (!files[0]||!active) return
+  const handleFileUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    
+    if (!file || !active) {
+      return
+    }
+    
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Only JPEG, PNG, WebP, and GIF are allowed')
+      return
+    }
+    
+    // Validate file size (20MB)
+    const maxSize = 20 * 1024 * 1024
+    if (file.size > maxSize) {
+      toast.error('File too large. Maximum size is 20MB')
+      return
+    }
+    
     setUploading(true)
     try {
-      const formData = new FormData(); 
-      formData.append('file', files[0])
-      const r  = await fetch('/api/invitations/upload',{method:'POST',body:formData})
-      const d  = await r.json()
-      if (!d.success) { toast.error(d.error); return }
-      setCardUrl(d.url); setPreview(d.url)
-      toast.success('Card uploaded!')
-    } finally { setUploading(false) }
-  },[active])
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const response = await fetch('/api/invitations/upload', {
+        method: 'POST',
+        body: formData
+      })
+      
+      const result = await response.json()
+      
+      if (!result.success) {
+        toast.error(result.error || 'Upload failed')
+        return
+      }
+      
+      setCardUrl(result.url)
+      setPreview(result.url)
+      toast.success('Card uploaded successfully!')
+    } catch (error) {
+      console.error('Upload error:', error)
+      toast.error('Upload failed. Please try again.')
+    } finally {
+      setUploading(false)
+    }
+  }, [active])
 
   async function send(email:boolean, wa:boolean) {
     if (!active?.inv_id) { toast.error('No invitation found'); return }
@@ -101,14 +129,40 @@ function Content() {
                   <div className="relative rounded-xl overflow-hidden border border-gold/20 mb-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={preview||active.card_url} alt="Card" className="w-full max-h-48 object-cover" />
-                    <button onClick={()=>{setCardUrl('');setPreview('')}}
-                      className="absolute top-2 right-2 bg-navy-900/80 text-cream/50 hover:text-rose-400 rounded-full w-6 h-6 flex items-center justify-center text-xs">✕</button>
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setCardUrl('')
+                        setPreview('')
+                      }}
+                      className="absolute top-2 right-2 bg-navy-900/80 text-cream/50 hover:text-rose-400 rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
+                      type="button"
+                    >✕</button>
                   </div>
                 ) : (
-                  <DirectUpload 
-                    onUploadComplete={onUploadComplete}
-                    className="border-2 border-dashed rounded-xl p-7 text-center cursor-pointer transition-all hover:border-gold/30"
-                  />
+                  <div className="border-2 border-dashed rounded-xl p-7 text-center">
+                    <input
+                      type="file"
+                      id="file-upload"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="hidden"
+                    />
+                    <label 
+                      htmlFor="file-upload"
+                      className="cursor-pointer inline-flex flex-col items-center gap-2 text-cream/60 hover:text-gold transition-colors"
+                    >
+                      <div className="text-2xl">📸</div>
+                      <span className="text-sm">
+                        {uploading ? 'Uploading...' : 'Choose Image'}
+                      </span>
+                      <span className="text-xs opacity-50">
+                        JPEG, PNG, WebP, GIF (max 20MB)
+                      </span>
+                    </label>
+                  </div>
                 )}
               </div>
 

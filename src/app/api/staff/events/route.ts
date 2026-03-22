@@ -7,6 +7,9 @@ export async function GET(req: NextRequest) {
   if (auth instanceof NextResponse) return auth
   const { user } = auth
   try {
+    console.log('Staff events API called, user role:', auth.user.role)
+    console.log('Executing SQL query...')
+    
     const rows = auth.user.role === 'admin'
       ? await sql`
           SELECT se.*, u.name AS staff_name, u.email AS staff_email, u.phone AS staff_phone,
@@ -57,10 +60,15 @@ export async function GET(req: NextRequest) {
           FROM events e
           LEFT JOIN guests g ON g.event_id = e.id
           LEFT JOIN invitations i ON i.guest_id = g.id
-          WHERE e.date >= CURRENT_DATE::date 
-          AND e.date <= (CURRENT_DATE::date + INTERVAL '2 days')
+          -- WHERE e.date >= CURRENT_DATE::date 
+          -- AND e.date <= (CURRENT_DATE::date + INTERVAL '2 days')
+          -- Show all events temporarily to confirm database has data
           GROUP BY e.id, e.title, e.date, e.location, e.description
           ORDER BY e.date ASC, e.title ASC`
+    
+    console.log('SQL query executed, rows returned:', rows.length)
+    console.log('First row sample:', rows[0])
+    
     return NextResponse.json({ assignments: rows })
   } catch (err) { console.error(err); return NextResponse.json({ error: 'Server error' }, { status: 500 }) }
 }

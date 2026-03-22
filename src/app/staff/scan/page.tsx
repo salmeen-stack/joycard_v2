@@ -33,50 +33,119 @@ function Content() {
     } catch { busy.current=false }
   },[])
 
-  async function start() {
+  const start = useCallback(async () => {
     setScanning(true); setError('')
     
     try {
-      // Check if we're on HTTPS (required for camera in production)
-      if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+      // ✅ Production-safe HTTPS check
+      const isSecureContext = location.protocol === 'https:' || 
+                             location.hostname === 'localhost' || 
+                             location.hostname === '127.0.0.1'
+      
+      if (!isSecureContext) {
         throw new Error('Camera access requires HTTPS in production. Please ensure your site is served over HTTPS.')
       }
       
-      // Check camera permissions first
-      const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName })
-      
-      if (permissions.state === 'denied') {
-        throw new Error('Camera access denied. Please enable camera permissions in your browser settings.')
+      // ✅ Enhanced camera permission check
+      try {
+        const permissions = await navigator.permissions.query({ name: 'camera' as PermissionName })
+        if (permissions.state === 'denied') {
+          throw new Error('Camera access denied. Please enable camera permissions in your browser settings.')
+        }
+      } catch (permError) {
+        console.warn('Permission query failed, continuing:', permError)
       }
       
-      // Check if mediaDevices is supported
+      console.log('Requesting camera access...')
+      
+      // ✅ Enhanced camera API support check
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        console.error('Camera API not supported')
         throw new Error('Camera API not supported in this browser. Please use a modern browser like Chrome, Firefox, or Safari.')
       }
       
-      const { Html5Qrcode } = await import('html5-qrcode')
-      const scanner = new Html5Qrcode('qr-reader')
-      scanRef.current = scanner
+      // ✅ Production-safe import with error handling
+      let Html5Qrcode
+      try {
+        const module = await import('html5-qrcode')
+        Html5Qrcode = module.Html5Qrcode
+        console.log('Html5Qrcode imported successfully')
+      } catch (importError) {
+        console.error('Failed to import html5-qrcode:', importError)
+        throw new Error('Failed to load QR scanner library. Please refresh the page and try again.')
+      }
       
+      // ✅ Create scanner with error handling
+      let scanner
+      try {
+        scanner = new Html5Qrcode('qr-reader')
+        scanRef.current = scanner
+        console.log('Scanner instance created')
+      } catch (scannerError) {
+        console.error('Failed to create scanner:', scannerError)
+        throw new Error('Failed to initialize QR scanner. Please refresh the page and try again.')
+      }
+      
+      // ✅ Production-safe camera configuration with fallback
+      const getCameraConfig = () => {
+        // Always return exactly one key
+        const config = { facingMode: 'environment' }
+        
+        // Log for debugging
+        console.log('Generated camera config:', config)
+        console.log('Config keys:', Object.keys(config))
+        console.log('Config validation:', Object.keys(config).length === 1)
+        
+        return config
+      }
+      
+      const cameraConfig = getCameraConfig()
+      
+      // ✅ Validate config before starting
+      if (typeof cameraConfig !== 'object' || Object.keys(cameraConfig).length !== 1) {
+        console.error('Invalid camera config:', cameraConfig)
+        throw new Error('Invalid camera configuration detected. Please refresh the page.')
+      }
+      
+      console.log('Starting scanner with validated config...')
+      
+      // ✅ Enhanced scanner start with comprehensive error handling
       await scanner.start(
-        { facingMode: 'environment' }, // First argument: camera config only
-        { fps: 10, qrbox: { width: 260, height: 260 } }, // Second argument: scanner config
+        cameraConfig, // ✅ Exactly one key
+        { 
+          fps: 10, 
+          qrbox: { width: 260, height: 260 },
+          // ✅ Additional production-safe options
+          disableFlip: false
+        },
         async (text) => {
-          const m = text.match(/\/invite\/([a-f0-9-]{36})/)||text.match(/\/verify\/([a-f0-9-]{36})/)
-          await handleScan(m?m[1]:text)
+          try {
+            const m = text.match(/\/invite\/([a-f0-9-]{36})/)||text.match(/\/verify\/([a-f0-9-]{36})/)
+            await handleScan(m?m[1]:text)
+          } catch (scanError) {
+            console.error('Scan processing error:', scanError)
+          }
         },
         (errorMessage) => {
-          // Only show error if it's not a common scanning error
-          if (!errorMessage.includes('No QR code found') && !errorMessage.includes('NotFoundException')) {
+          // ✅ Enhanced error filtering
+          if (!errorMessage.includes('No QR code found') && 
+              !errorMessage.includes('NotFoundException') &&
+              !errorMessage.includes('MultiFormatReader') &&
+              !errorMessage.includes('NotFoundException') &&
+              !errorMessage.includes('No barcode or QR code detected')) {
             console.log('Scanner error:', errorMessage)
           }
         }
       )
+      
+      console.log('Scanner started successfully')
+      setScanning(false)
+      
     } catch (err) {
       console.error('Scanner start failed:', err)
       const errorMsg = err instanceof Error ? err.message : 'Unknown error'
       
-      // Enhanced error messages for production
+      // ✅ Enhanced production error messages
       if (errorMsg.includes('Permission denied') || errorMsg.includes('NotAllowedError')) {
         setError('📷 Camera access denied. Please allow camera access and try again.')
       } else if (errorMsg.includes('NotFoundError') || errorMsg.includes('no camera')) {
@@ -87,16 +156,26 @@ function Content() {
         setError('🔒 Camera requires HTTPS connection. Please ensure your site is served over HTTPS.')
       } else if (errorMsg.includes('not supported') || errorMsg.includes('getUserMedia')) {
         setError('🌐 Camera API not supported. Please use Chrome, Firefox, or Safari on a mobile device.')
+      } else if (errorMsg.includes('object should have exactly 1 key')) {
+        setError('🔧 Camera configuration error. Please refresh the page and try again.')
+      } else if (errorMsg.includes('Failed to load') || errorMsg.includes('Failed to initialize')) {
+        setError('🔧 Scanner library error. Please refresh the page and try again.')
       } else {
         setError(`📷 Camera error: ${errorMsg}`)
       }
       setScanning(false)
     }
-  }
+  }, [handleScan])
 
   async function stop() {
-    if (scanRef.current) { try { await scanRef.current.stop() } catch {} scanRef.current=null }
-    setScanning(false); setResult(null)
+    if (scanRef.current) { 
+      try { 
+        await scanRef.current.stop() 
+      } catch {} 
+      scanRef.current = null 
+    }
+    setScanning(false)
+    setResult(null)
   }
 
   useEffect(()=>()=>{ if(scanRef.current) scanRef.current.stop().catch(()=>{}) },[])

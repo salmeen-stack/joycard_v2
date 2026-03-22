@@ -64,20 +64,23 @@ export async function POST(req: NextRequest) {
         {
           resource_type: 'image',
           folder: 'invitations',
-          format: 'auto'
+          use_filename: true,
+          unique_filename: false
         },
         (error: any, result: any) => {
           if (error) {
             reject(error)
-          } else {
+          } else if (result) {
             resolve({
               secure_url: result.secure_url,
               public_id: result.public_id
             })
+          } else {
+            reject(new Error('Upload failed: No result returned from Cloudinary'))
           }
         }
       )
-      
+
       uploadStream.end(buffer)
     })
 
@@ -91,9 +94,9 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Cloudinary upload error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Upload failed' 
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Upload failed'
     }, { status: 500 })
   }
 }
