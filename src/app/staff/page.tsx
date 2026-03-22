@@ -66,12 +66,17 @@ function Card({ ev, today, onTakeEvent, onLeaveEvent, currentAssignment }: {
     if (!onLeaveEvent) return
     setLeaving(true)
     try {
+      console.log('Attempting to leave event:', ev.event_id)
+      
       const res = await fetch('/api/staff/events', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ event_id: ev.event_id })
       })
+      
+      console.log('Leave event response status:', res.status)
       const data = await res.json()
+      console.log('Leave event response data:', data)
       
       if (res.ok) {
         toast.success(data.message)
@@ -80,6 +85,7 @@ function Card({ ev, today, onTakeEvent, onLeaveEvent, currentAssignment }: {
         toast.error(data.error || 'Failed to leave event')
       }
     } catch (error) {
+      console.error('Leave event error:', error)
       toast.error('Failed to leave event')
     } finally {
       setLeaving(false)

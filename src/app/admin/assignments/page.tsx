@@ -20,7 +20,7 @@ export default function AdminAssignments() {
   const load = async () => {
     try {
       const [a,u,e] = await Promise.all([
-        fetch(tab==='organizer'?'/api/admin/assignments':'/api/staff/events').then(r=>r.json()),
+        fetch(tab==='organizer'?'/api/admin/assignments':'/api/admin/assignments?role=staff').then(r=>r.json()),
         fetch(`/api/admin/users?role=${tab}`).then(r=>r.json()),
         fetch('/api/events').then(r=>r.json()),
       ])
