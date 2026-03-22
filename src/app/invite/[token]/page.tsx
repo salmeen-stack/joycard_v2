@@ -23,7 +23,7 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
         const d = await r.json()
         setInv(d.invitation)
         const QR = (await import('qrcode')).default
-        const url = `${process.env.NEXT_PUBLIC_APP_URL || (typeof window!=='undefined' ? window.location.origin : '')}/invite/${token}`
+        const url = `${process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || (typeof window!=='undefined' ? window.location.origin : '')}/invite/${token}`
         const qrDataUrl = await QR.toDataURL(url,{ errorCorrectionLevel:'H', width:280, margin:2, color:{dark:'#0F172A',light:'#F8FAFC'} })
         setQrUrl(qrDataUrl)
       } catch (error) { 
