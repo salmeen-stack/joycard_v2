@@ -97,7 +97,7 @@ function Content() {
     } finally { setSending(false) }
   }
 
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://joycard-v2.vercel.app'
+  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://joycardv2.vercel.app'
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
