@@ -82,7 +82,14 @@ export async function PUT(req: NextRequest) {
       WHERE id = ${invitation_id}
     `
 
-    const base = process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://joycardv2.vercel.app'
+    // Force production URL for debugging
+    const base = 'https://joycardv2.vercel.app'
+    
+    // Debug logging
+    console.log('API Base URL:', base, 'Env vars:', {
+      APP_URL: process.env.APP_URL,
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL
+    })
     const inviteUrl = `${base}/invite/${inv.qr_token}`
     const eventDate = format(new Date(inv.event_date), 'EEEE, MMMM d, yyyy')
     const finalCard = card_type  ?? inv.card_type

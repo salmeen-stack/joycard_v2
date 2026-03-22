@@ -97,7 +97,16 @@ function Content() {
     } finally { setSending(false) }
   }
 
-  const base = process.env.NEXT_PUBLIC_APP_URL || 'https://joycardv2.vercel.app'
+  // Force production URL for debugging
+  const base = 'https://joycardv2.vercel.app'
+  
+  // Debug logging (remove in production)
+  if (typeof window !== 'undefined') {
+    console.log('Environment vars:', {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+      finalBase: base
+    })
+  }
 
   return (
     <div className="p-8 max-w-6xl mx-auto">
