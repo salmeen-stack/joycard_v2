@@ -17,6 +17,7 @@ function Content() {
   const [error,    setError]    = useState('')
   const scanRef  = useRef<{stop:()=>Promise<void>}|null>(null)
   const busy     = useRef(false)
+  const scannerActive = useRef(false)
 
   const handleScan = useCallback(async (token: string) => {
     if (busy.current) return
@@ -34,7 +35,8 @@ function Content() {
   },[])
 
   const start = useCallback(async () => {
-    setScanning(true); setError('')
+    setError('')
+    scannerActive.current = true
     
     try {
       // ✅ Production-safe HTTPS check
@@ -146,7 +148,7 @@ function Content() {
       )
       
       console.log('Scanner started successfully')
-      setScanning(false)
+      setScanning(true) // ✅ Set scanning to true after successful start
       
     } catch (err) {
       console.error('Scanner start failed:', err)
@@ -170,6 +172,7 @@ function Content() {
       } else {
         setError(`📷 Camera error: ${errorMsg}`)
       }
+      scannerActive.current = false
       setScanning(false)
     }
   }, [handleScan])
@@ -181,11 +184,18 @@ function Content() {
       } catch {} 
       scanRef.current = null 
     }
+    scannerActive.current = false
     setScanning(false)
     setResult(null)
   }
 
-  useEffect(()=>()=>{ if(scanRef.current) scanRef.current.stop().catch(()=>{}) },[])
+  useEffect(()=>{
+    return () => {
+      if(scanRef.current && !scannerActive.current) {
+        scanRef.current.stop().catch(()=>{})
+      }
+    }
+  },[scanning])
 
   return (
     <div className="p-8 max-w-2xl mx-auto">
