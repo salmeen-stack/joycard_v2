@@ -15,32 +15,17 @@ export async function GET(req: NextRequest) {
       whereClause = `WHERE e.title ILIKE '%${search}%' OR e.location ILIKE '%${search}%' OR e.date::text ILIKE '%${search}%'`
     }
 
-    let events
-    try {
-      events = await sql`
-        SELECT e.*,
-          COUNT(DISTINCT g.id)::int  AS total_guests,
-          COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END)::int AS checked_in
-        FROM events e
-        LEFT JOIN guests g ON g.event_id = e.id
-        LEFT JOIN invitations i ON i.guest_id = g.id
-        ${whereClause}
-        GROUP BY e.id
-        ORDER BY e.date DESC
-      `
-    } catch (err) {
-      // Fallback with simpler query
-      events = await sql`
-        SELECT e.*,
-          COUNT(DISTINCT g.id)::int  AS total_guests,
-          0 AS checked_in
-        FROM events e
-        LEFT JOIN guests g ON g.event_id = e.id
-        ${whereClause}
-        GROUP BY e.id
-        ORDER BY e.date DESC
-      `
-    }
+    const events = await sql`
+      SELECT e.*,
+        COUNT(DISTINCT g.id)::int  AS total_guests,
+        COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END)::int AS checked_in
+      FROM events e
+      LEFT JOIN guests g ON g.event_id = e.id
+      LEFT JOIN invitations i ON i.guest_id = g.id
+      ${whereClause}
+      GROUP BY e.id
+      ORDER BY e.date DESC
+    `
     return NextResponse.json({ events })
   } catch (err) {
     console.error(err)

@@ -42,75 +42,40 @@ export async function GET(req: NextRequest) {
 }
 
 async function generateOverviewReport(userId: number, userRole: string) {
-  let overview
-  try {
-    const baseQuery = userRole === 'admin'
-      ? sql`
-          SELECT 
-            COUNT(DISTINCT e.id) as total_events,
-            COUNT(DISTINCT g.id) as total_guests,
-            COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-            COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
-            COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
-            COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
-            AVG(CASE WHEN i.scanned_at IS NOT NULL 
-              THEN EXTRACT(EPOCH FROM (i.scanned_at - g.created_at))/60 
-              ELSE NULL END) as avg_checkin_time_minutes
-          FROM events e
-          LEFT JOIN guests g ON g.event_id = e.id
-          LEFT JOIN invitations i ON i.guest_id = g.id
-        `
-      : sql`
-          SELECT 
-            COUNT(DISTINCT e.id) as total_events,
-            COUNT(DISTINCT g.id) as total_guests,
-            COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-            COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
-            COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
-            COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
-            AVG(CASE WHEN i.scanned_at IS NOT NULL 
-              THEN EXTRACT(EPOCH FROM (i.scanned_at - g.created_at))/60 
-              ELSE NULL END) as avg_checkin_time_minutes
-          FROM organizer_assignments oa
-          JOIN events e ON e.id = oa.event_id
-          LEFT JOIN guests g ON g.event_id = e.id
-          LEFT JOIN invitations i ON i.guest_id = g.id
-          WHERE oa.organizer_id = ${userId}
-        `
-    overview = await baseQuery
-  } catch (err) {
-    // Fallback with simpler query
-    const baseQuery = userRole === 'admin'
-      ? sql`
-          SELECT 
-            COUNT(DISTINCT e.id) as total_events,
-            COUNT(DISTINCT g.id) as total_guests,
-            COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-            0 as invitations_sent,
-            0 as double_entries,
-            0 as single_entries,
-            0 as avg_checkin_time_minutes
-          FROM events e
-          LEFT JOIN guests g ON g.event_id = e.id
-          LEFT JOIN invitations i ON i.guest_id = g.id
-        `
-      : sql`
-          SELECT 
-            COUNT(DISTINCT e.id) as total_events,
-            COUNT(DISTINCT g.id) as total_guests,
-            COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-            0 as invitations_sent,
-            0 as double_entries,
-            0 as single_entries,
-            0 as avg_checkin_time_minutes
-          FROM organizer_assignments oa
-          JOIN events e ON e.id = oa.event_id
-          LEFT JOIN guests g ON g.event_id = e.id
-          LEFT JOIN invitations i ON i.guest_id = g.id
-          WHERE oa.organizer_id = ${userId}
-        `
-    overview = await baseQuery
-  }
+  const baseQuery = userRole === 'admin'
+    ? sql`
+        SELECT 
+          COUNT(DISTINCT e.id) as total_events,
+          COUNT(DISTINCT g.id) as total_guests,
+          COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
+          COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
+          AVG(CASE WHEN i.scanned_at IS NOT NULL 
+            THEN EXTRACT(EPOCH FROM (i.scanned_at - g.created_at))/60 
+            ELSE NULL END) as avg_checkin_time_minutes
+        FROM events e
+        LEFT JOIN guests g ON g.event_id = e.id
+        LEFT JOIN invitations i ON i.guest_id = g.id
+      `
+    : sql`
+        SELECT 
+          COUNT(DISTINCT e.id) as total_events,
+          COUNT(DISTINCT g.id) as total_guests,
+          COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
+          COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
+          AVG(CASE WHEN i.scanned_at IS NOT NULL 
+            THEN EXTRACT(EPOCH FROM (i.scanned_at - g.created_at))/60 
+            ELSE NULL END) as avg_checkin_time_minutes
+        FROM organizer_assignments oa
+        JOIN events e ON e.id = oa.event_id
+        LEFT JOIN guests g ON g.event_id = e.id
+        LEFT JOIN invitations i ON i.guest_id = g.id
+        WHERE oa.organizer_id = ${userId}
+      `
+  const overview = await baseQuery
   return { type: 'overview', data: overview[0] }
 }
 
