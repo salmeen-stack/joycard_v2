@@ -40,7 +40,7 @@ async function main() {
     event_id   INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
     name       TEXT NOT NULL,
     contact    TEXT NOT NULL,
-    channel    TEXT NOT NULL CHECK (channel IN ('email','whatsapp')),
+    channel    TEXT NOT NULL CHECK (channel IN ('sms','whatsapp')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`
   await sql`CREATE INDEX idx_guests_event ON guests(event_id)`
@@ -53,8 +53,12 @@ async function main() {
     dress_code        TEXT NOT NULL DEFAULT 'Smart Casual',
     qr_token          TEXT NOT NULL UNIQUE,
     scanned_at        TIMESTAMPTZ,
-    sent_via_email    BOOLEAN NOT NULL DEFAULT FALSE,
+    sent_via_sms      BOOLEAN NOT NULL DEFAULT FALSE,
     sent_via_whatsapp BOOLEAN NOT NULL DEFAULT FALSE,
+    sms_delivery_status TEXT CHECK (sms_delivery_status IN ('pending','delivered','failed')),
+    sms_delivery_message TEXT,
+    sms_sent_at       TIMESTAMPTZ,
+    sms_delivered_at  TIMESTAMPTZ,
     created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW()
   )`
   await sql`CREATE INDEX idx_inv_guest   ON invitations(guest_id)`

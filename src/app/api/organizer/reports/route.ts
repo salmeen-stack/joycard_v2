@@ -48,7 +48,7 @@ async function generateOverviewReport(userId: number, userRole: string) {
           COUNT(DISTINCT e.id) as total_events,
           COUNT(DISTINCT g.id) as total_guests,
           COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
           COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
           COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
           AVG(CASE WHEN i.scanned_at IS NOT NULL 
@@ -63,7 +63,7 @@ async function generateOverviewReport(userId: number, userRole: string) {
           COUNT(DISTINCT e.id) as total_events,
           COUNT(DISTINCT g.id) as total_guests,
           COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
           COUNT(DISTINCT CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
           COUNT(DISTINCT CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
           AVG(CASE WHEN i.scanned_at IS NOT NULL 
@@ -100,10 +100,10 @@ async function generateEventDetailsReport(userId: number, userRole: string, even
       e.description,
       COUNT(g.id) as total_guests,
       COUNT(CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as checked_in,
-      COUNT(CASE WHEN i.sent_via_email = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
+      COUNT(CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as invitations_sent,
       COUNT(CASE WHEN i.card_type = 'double' THEN i.id END) as double_entries,
       COUNT(CASE WHEN i.card_type = 'single' THEN i.id END) as single_entries,
-      COUNT(CASE WHEN g.channel = 'email' THEN g.id END) as email_guests,
+      COUNT(CASE WHEN g.channel = 'sms' THEN g.id END) as sms_guests,
       COUNT(CASE WHEN g.channel = 'whatsapp' THEN g.id END) as whatsapp_guests
     FROM events e
     LEFT JOIN guests g ON g.event_id = e.id
@@ -160,11 +160,11 @@ async function generateEngagementReport(userId: number, userRole: string) {
 
   const engagement = await sql`
     SELECT 
-      COUNT(CASE WHEN i.sent_via_email = true THEN i.id END) as emails_sent,
+      COUNT(CASE WHEN i.sent_via_sms = true THEN i.id END) as sms_sent,
       COUNT(CASE WHEN i.sent_via_whatsapp = true THEN i.id END) as whatsapp_sent,
-      COUNT(CASE WHEN i.sent_via_email = false AND i.sent_via_whatsapp = false THEN i.id END) as pending_invitations,
+      COUNT(CASE WHEN i.sent_via_sms = false AND i.sent_via_whatsapp = false THEN i.id END) as pending_invitations,
       COUNT(CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checkins,
-      COUNT(CASE WHEN i.scanned_at IS NOT NULL AND i.sent_via_email = true THEN i.id END) as email_checkins,
+      COUNT(CASE WHEN i.scanned_at IS NOT NULL AND i.sent_via_sms = true THEN i.id END) as sms_checkins,
       COUNT(CASE WHEN i.scanned_at IS NOT NULL AND i.sent_via_whatsapp = true THEN i.id END) as whatsapp_checkins
     FROM organizer_assignments oa
     JOIN events e ON e.id = oa.event_id

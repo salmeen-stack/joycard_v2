@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; dress_code?:string; inv_id?:number; qr_token?:string; scanned_at?:string; sent_via_email?:boolean; sent_via_whatsapp?:boolean }
+interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; dress_code?:string; inv_id?:number; qr_token?:string; scanned_at?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; sms_delivery_status?:string; sms_delivery_message?:string }
 interface Asgn  { id:number; event_id:number; event_title:string; guest_limit:number; guests_added:number }
-const INIT = { name:'', contact:'', channel:'email', card_type:'single', dress_code:'Smart Casual' }
+const INIT = { name:'', contact:'', channel:'sms', card_type:'single', dress_code:'Smart Casual' }
 
 function Content() {
   const sp = useSearchParams()
@@ -129,11 +129,11 @@ function Content() {
               <h2 className="font-display text-2xl font-semibold text-cream mb-6">Add Guest</h2>
               <form onSubmit={add} className="space-y-4">
                 <div><label className="label">Name</label><input className="input" required value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Full name" /></div>
-                <div><label className="label">Contact ({form.channel==='email'?'Email':'Phone'})</label><input className="input" required value={form.contact} onChange={e=>setForm(f=>({...f,contact:e.target.value}))} placeholder={form.channel==='email'?'email@example.com':'+1234567890'} /></div>
+                <div><label className="label">Contact ({form.channel==='sms'?'Phone':'WhatsApp'})</label><input className="input" required value={form.contact} onChange={e=>setForm(f=>({...f,contact:e.target.value}))} placeholder={form.channel==='sms'?'+255712345678':'+255712345678'} /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><label className="label">Channel</label>
                     <select className="input" value={form.channel} onChange={e=>setForm(f=>({...f,channel:e.target.value}))}>
-                      <option value="email">Email</option><option value="whatsapp">WhatsApp</option>
+                      <option value="sms">SMS</option><option value="whatsapp">WhatsApp</option>
                     </select>
                   </div>
                   <div><label className="label">Card Type</label>
@@ -167,12 +167,14 @@ function Content() {
                 <tr key={g.id}>
                   <td className="font-medium text-cream">{g.name}</td>
                   <td className="text-cream/45 text-xs">{g.contact}</td>
-                  <td><span className={`badge ${g.channel==='email'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
+                  <td><span className={`badge ${g.channel==='sms'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
                   <td><span className="badge badge-slate">{g.card_type||'single'}</span></td>
                   <td className="text-cream/45 text-xs">{g.dress_code||'—'}</td>
                   <td>
                     {g.scanned_at?<span className="badge badge-teal">✓ In</span>
-                    :g.sent_via_email||g.sent_via_whatsapp?<span className="badge badge-gold">Sent</span>
+                    :g.sms_delivery_status==='delivered'?<span className="badge badge-emerald">✓ Delivered</span>
+                    :g.sms_delivery_status==='failed'?<span className="badge badge-rose">✗ Failed</span>
+                    :g.sent_via_sms||g.sent_via_whatsapp?<span className="badge badge-gold">Sent</span>
                     :<span className="badge badge-slate">Pending</span>}
                   </td>
                   <td><button onClick={()=>del(g.id)} className="text-cream/25 hover:text-rose-400 transition-colors text-xs">Remove</button></td>

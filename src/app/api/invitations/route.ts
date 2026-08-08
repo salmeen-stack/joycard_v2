@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
-import { sendInvitationEmail } from '@/lib/email'
+import { sendInvitationSms } from '@/lib/sms'
 import { whatsappLink, whatsappMessage } from '@/lib/qr'
 import { format } from 'date-fns'
 
@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   try {
-    const { invitation_id, card_url, card_type, dress_code, send_email, send_whatsapp } = await req.json()
+    const { invitation_id, card_url, card_type, dress_code, send_sms, send_whatsapp } = await req.json()
     if (!invitation_id)
       return NextResponse.json({ error: 'invitation_id required' }, { status: 400 })
 
@@ -95,16 +95,35 @@ export async function PUT(req: NextRequest) {
     const finalCard = card_type  ?? inv.card_type
     const finalDress = dress_code ?? inv.dress_code
 
-    let emailSent    = false
+    let smsSent      = false
+    let smsResult    = null
     let waLink: string | null = null
 
-    if (send_email && inv.channel === 'email') {
-      emailSent = await sendInvitationEmail({
-        to: inv.contact, guestName: inv.guest_name, eventTitle: inv.event_title,
-        eventDate, eventLocation: inv.event_location, cardType: finalCard,
-        dressCode: finalDress, inviteUrl,
-      })
-      if (emailSent) await sql`UPDATE invitations SET sent_via_email=TRUE WHERE id=${invitation_id}`
+    if (send_sms && inv.channel === 'sms') {
+      smsResult = await sendInvitationSms(
+        inv.contact,
+        inv.guest_name,
+        inv.event_title,
+        inviteUrl
+      )
+      smsSent = smsResult.success
+      
+      // Track delivery status if columns exist
+      try {
+        await sql`
+          UPDATE invitations 
+          SET 
+            sent_via_sms = TRUE,
+            sms_delivery_status = ${smsResult.status},
+            sms_delivery_message = ${smsResult.message},
+            sms_sent_at = NOW()
+          WHERE id = ${invitation_id}
+        `
+      } catch (err) {
+        // Columns might not exist yet, fallback to basic update
+        console.log('SMS tracking columns not available, using basic update')
+        if (smsSent) await sql`UPDATE invitations SET sent_via_sms=TRUE WHERE id=${invitation_id}`
+      }
     }
 
     if (send_whatsapp) {
@@ -117,6 +136,6 @@ export async function PUT(req: NextRequest) {
       await sql`UPDATE invitations SET sent_via_whatsapp=TRUE WHERE id=${invitation_id}`
     }
 
-    return NextResponse.json({ success: true, emailSent, whatsappLink: waLink })
+    return NextResponse.json({ success: true, smsSent, smsResult, whatsappLink: waLink })
   } catch (err) { console.error(err); return NextResponse.json({ error: 'Server error' }, { status: 500 }) }
 }

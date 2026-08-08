@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import toast from 'react-hot-toast'
 
-interface Guest { id:number; name:string; contact:string; channel:string; event_title:string; card_type?:string; scanned_at?:string; sent_via_email?:boolean; sent_via_whatsapp?:boolean }
+interface Guest { id:number; name:string; contact:string; channel:string; event_title:string; card_type?:string; scanned_at?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; sms_delivery_status?:string; sms_delivery_message?:string }
 interface EventItem { id:number; title:string }
 
 export default function AdminGuests() {
@@ -62,11 +62,13 @@ export default function AdminGuests() {
                     <td className="font-medium text-cream">{g.name}</td>
                     <td className="text-cream/45 text-xs">{g.event_title}</td>
                     <td className="text-cream/45 text-xs">{g.contact}</td>
-                    <td><span className={`badge ${g.channel==='email'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
+                    <td><span className={`badge ${g.channel==='sms'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
                     <td><span className="badge badge-slate">{g.card_type||'—'}</span></td>
                     <td>
                       {g.scanned_at?<span className="badge badge-teal">✓ In</span>
-                      :g.sent_via_email||g.sent_via_whatsapp?<span className="badge badge-gold">Sent</span>
+                      :g.sms_delivery_status==='delivered'?<span className="badge badge-emerald">✓ Delivered</span>
+                      :g.sms_delivery_status==='failed'?<span className="badge badge-rose">✗ Failed</span>
+                      :g.sent_via_sms||g.sent_via_whatsapp?<span className="badge badge-gold">Sent</span>
                       :<span className="badge badge-slate">Pending</span>}
                     </td>
                     <td><button onClick={()=>del(g.id)} className="text-cream/30 hover:text-rose-400 transition-colors text-sm">Delete</button></td>

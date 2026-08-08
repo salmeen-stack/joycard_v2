@@ -1,5 +1,5 @@
 export type UserRole = 'admin' | 'organizer' | 'staff'
-export type Channel  = 'email' | 'whatsapp'
+export type Channel  = 'sms' | 'whatsapp'
 export type CardType = 'single' | 'double'
 
 export interface User {
@@ -14,7 +14,7 @@ export interface Guest {
 export interface Invitation {
   id: number; guest_id: number; card_url?: string; card_type: CardType
   dress_code: string; qr_token: string; scanned_at?: string
-  sent_via_email: boolean; sent_via_whatsapp: boolean; created_at: string
+  sent_via_sms: boolean; sent_via_whatsapp: boolean; created_at: string
 }
 export interface ScanResult {
   valid: boolean; alreadyScanned: boolean; message: string

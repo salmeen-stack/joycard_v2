@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_email?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string }
+interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string; sms_delivery_status?:string; sms_delivery_message?:string }
 interface Asgn  { event_id:number; event_title:string }
 
 function Content() {
@@ -18,6 +18,8 @@ function Content() {
   const [preview,  setPreview]  = useState('')
   const [sending,  setSending]  = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [bulkSending, setBulkSending] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -80,21 +82,60 @@ function Content() {
     }
   }, [active])
 
-  async function send(email:boolean, wa:boolean) {
+  async function send(sms:boolean, wa:boolean) {
     if (!active?.inv_id) { toast.error('No invitation found'); return }
     setSending(true)
     try {
       const r = await fetch('/api/invitations',{
         method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ invitation_id:active.inv_id, card_url:cardUrl||active.card_url, send_email:email, send_whatsapp:wa }),
+        body:JSON.stringify({ invitation_id:active.inv_id, card_url:cardUrl||active.card_url, send_sms:sms, send_whatsapp:wa }),
       })
       const d = await r.json()
       if (!r.ok) { toast.error(d.error); return }
       if (wa && d.whatsappLink) { window.open(d.whatsappLink,'_blank'); toast.success('WhatsApp opened!') }
-      if (email && d.emailSent)  toast.success('Email sent!')
-      if (email && !d.emailSent) toast.error('Email failed — check Gmail config')
+      if (sms && d.smsSent)  toast.success('SMS sent!')
+      if (sms && !d.smsSent) toast.error('SMS failed — check RafikiSMS config')
       setActive(null); setCardUrl(''); setPreview(''); load()
     } finally { setSending(false) }
+  }
+
+  async function sendBulk(sms:boolean, wa:boolean) {
+    const selectedIds = Array.from(selected).map(id => guests.find(g => g.inv_id === id)?.inv_id).filter(Boolean) as number[]
+    if (selectedIds.length === 0) { toast.error('No guests selected'); return }
+    
+    setBulkSending(true)
+    try {
+      const r = await fetch('/api/invitations/bulk',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ invitation_ids:selectedIds, send_sms:sms, send_whatsapp:wa }),
+      })
+      const d = await r.json()
+      if (!r.ok) { toast.error(d.error); return }
+      
+      toast.success(`Sent to ${d.summary.sms_sent} SMS, ${d.summary.whatsapp_sent} WhatsApp`)
+      if (d.summary.sms_failed > 0) toast.error(`${d.summary.sms_failed} SMS failed`)
+      
+      setSelected(new Set())
+      load()
+    } finally { setBulkSending(false) }
+  }
+
+  const toggleSelect = (id: number) => {
+    const newSelected = new Set(selected)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelected(newSelected)
+  }
+
+  const toggleSelectAll = () => {
+    if (selected.size === guests.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(guests.filter(g => g.inv_id).map(g => g.inv_id!)))
+    }
   }
 
   // Force production URL for debugging
@@ -115,12 +156,24 @@ function Content() {
         <h1 className="font-display text-4xl font-semibold text-cream">Send Invitations</h1>
       </motion.div>
 
-      <div className="mb-6 max-w-xs">
-        <label className="label">Select Event</label>
-        <select className="input" value={selEvent} onChange={e=>setSelEvent(e.target.value)}>
-          <option value="">All Events</option>
-          {asgns.map(a=><option key={a.event_id} value={a.event_id}>{a.event_title}</option>)}
-        </select>
+      <div className="mb-6 flex gap-4 items-end">
+        <div className="max-w-xs">
+          <label className="label">Select Event</label>
+          <select className="input" value={selEvent} onChange={e=>setSelEvent(e.target.value)}>
+            <option value="">All Events</option>
+            {asgns.map(a=><option key={a.event_id} value={a.event_id}>{a.event_title}</option>)}
+          </select>
+        </div>
+        {selected.size > 0 && (
+          <div className="flex gap-2">
+            <button onClick={()=>sendBulk(true,false)} disabled={bulkSending} className="btn-gold">
+              {bulkSending?'Sending…':`📱 Send SMS (${selected.size})`}
+            </button>
+            <button onClick={()=>sendBulk(false,true)} disabled={bulkSending} className="btn-teal">
+              {bulkSending?'Opening…':`💬 Send WhatsApp (${selected.size})`}
+            </button>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -183,9 +236,9 @@ function Content() {
               )}
 
               <div className="space-y-3">
-                {active.channel==='email' && (
+                {active.channel==='sms' && (
                   <button onClick={()=>send(true,false)} disabled={sending} className="btn-gold w-full">
-                    {sending?'Sending…':'📧 Send via Email'}
+                    {sending?'Sending…':'� Send via SMS'}
                   </button>
                 )}
                 {active.channel==='whatsapp' && (
@@ -206,21 +259,24 @@ function Content() {
           <div className="p-16 text-center"><p className="text-3xl mb-3">📨</p><p className="font-display text-lg text-cream mb-2">No Guests</p><p className="text-cream/35 text-sm">Add guests first, then send invitations.</p></div>
         ) : (
           <table className="table">
-            <thead><tr><th>Guest</th><th>Channel</th><th>Card</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th className="w-10"><input type="checkbox" checked={selected.size===guests.length && guests.length>0} onChange={toggleSelectAll} className="cursor-pointer" /></th><th>Guest</th><th>Channel</th><th>Card</th><th>Status</th><th>Action</th></tr></thead>
             <tbody>
               {guests.map(g=>(
                 <tr key={g.id}>
+                  <td>{g.inv_id && <input type="checkbox" checked={selected.has(g.inv_id)} onChange={()=>toggleSelect(g.inv_id!)} className="cursor-pointer" />}</td>
                   <td><p className="text-cream font-medium">{g.name}</p><p className="text-cream/30 text-xs">{g.contact}</p></td>
-                  <td><span className={`badge ${g.channel==='email'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
+                  <td><span className={`badge ${g.channel==='sms'?'badge-gold':'badge-teal'}`}>{g.channel}</span></td>
                   <td><span className="badge badge-slate">{g.card_type||'single'}</span></td>
                   <td>
                     {g.scanned_at?<span className="badge badge-teal">✓ Checked In</span>
-                    :g.sent_via_email||g.sent_via_whatsapp?<span className="badge badge-gold">✓ Sent</span>
+                    :g.sms_delivery_status==='delivered'?<span className="badge badge-emerald">✓ Delivered</span>
+                    :g.sms_delivery_status==='failed'?<span className="badge badge-rose">✗ Failed</span>
+                    :g.sent_via_sms||g.sent_via_whatsapp?<span className="badge badge-gold">✓ Sent</span>
                     :<span className="badge badge-slate">Not Sent</span>}
                   </td>
                   <td>
                     <button onClick={()=>{setActive(g);setCardUrl('');setPreview('')}} className="btn-ghost py-1.5 px-4 text-xs">
-                      {g.sent_via_email||g.sent_via_whatsapp?'Resend':'Send'}
+                      {g.sent_via_sms||g.sent_via_whatsapp?'Resend':'Send'}
                     </button>
                   </td>
                 </tr>
