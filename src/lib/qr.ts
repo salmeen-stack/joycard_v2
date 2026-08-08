@@ -20,7 +20,7 @@ export function whatsappLink(phone: string, message: string): string {
   return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`
 }
 
-export function whatsappMessage(opts: {
+interface WhatsAppMessageOptions {
   guestName: string
   eventTitle: string
   eventDate: string
@@ -28,21 +28,40 @@ export function whatsappMessage(opts: {
   cardType: string
   dressCode: string
   inviteUrl: string
-}, template?: string): string {
-  const entry = opts.cardType === 'double' ? 'Double Entry (2 persons)' : 'Single Entry (1 person)'
-  
-  if (template) {
-    // Use custom template with variable replacement
-    return template
-      .replace(/{guest_name}/gi, opts.guestName)
-      .replace(/{event_title}/gi, opts.eventTitle)
-      .replace(/{event_date}/gi, opts.eventDate)
-      .replace(/{event_location}/gi, opts.eventLocation)
-      .replace(/{card_type}/gi, entry)
-      .replace(/{dress_code}/gi, opts.dressCode)
-      .replace(/{invite_url}/gi, opts.inviteUrl)
-  }
-  
-  // Default template
-  return `🎉 *You're Invited!*\n\nDear *${opts.guestName}*,\n\n✨ *${opts.eventTitle}*\n📅 ${opts.eventDate}\n📍 ${opts.eventLocation}\n🎟️ ${entry}\n👔 Dress Code: ${opts.dressCode}\n\n👇 *View your invitation & QR code:*\n${opts.inviteUrl}\n\n_Personal & non-transferable._`
+}
+
+export function whatsappMessage(
+  options: WhatsAppMessageOptions,
+  template?: string
+): string {
+  const {
+    guestName,
+    eventTitle,
+    eventDate,
+    eventLocation,
+    cardType,
+    dressCode,
+    inviteUrl
+  } = options
+
+  let message = template || `Hi {guest_name}! You're invited to {event_title}. View your invitation: {invite_url}`
+
+  // Replace template variables
+  message = message
+    .replace(/{guest_name}/g, guestName)
+    .replace(/{event_title}/g, eventTitle)
+    .replace(/{event_date}/g, eventDate)
+    .replace(/{event_location}/g, eventLocation)
+    .replace(/{card_type}/g, cardType)
+    .replace(/{dress_code}/g, dressCode)
+    .replace(/{invite_url}/g, inviteUrl)
+    .replace(/{guest_name}/gi, guestName)
+    .replace(/{event_title}/gi, eventTitle)
+    .replace(/{event_date}/gi, eventDate)
+    .replace(/{event_location}/gi, eventLocation)
+    .replace(/{card_type}/gi, cardType)
+    .replace(/{dress_code}/gi, dressCode)
+    .replace(/{invite_url}/gi, inviteUrl)
+
+  return message
 }

@@ -114,7 +114,7 @@ export async function PUT(req: NextRequest) {
         formattedContact,
         inv.guest_name,
         inv.event_title,
-        inviteUrl,
+        inv.qr_token,
         templateContent || undefined
       )
       smsSent = smsResult.success
@@ -141,7 +141,7 @@ export async function PUT(req: NextRequest) {
       const msg = whatsappMessage({
         guestName: inv.guest_name, eventTitle: inv.event_title,
         eventDate, eventLocation: inv.event_location,
-        cardType: finalCard, dressCode: finalDress, inviteUrl,
+        cardType: finalCard, dressCode: finalDress, inviteUrl
       }, templateContent || undefined)
       waLink = whatsappLink(inv.contact, msg)
       await sql`UPDATE invitations SET sent_via_whatsapp=TRUE WHERE id=${invitation_id}`

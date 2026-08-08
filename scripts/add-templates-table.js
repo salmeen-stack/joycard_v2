@@ -25,6 +25,7 @@ async function main() {
   dbUrl = dbUrl.replace(/channel_binding=require/g, '')
   dbUrl = dbUrl.replace(/&$/, '')
   
+  console.log('Connecting to database...')
   const sql = neon(dbUrl)
   console.log('Adding message_templates table...')
 
@@ -46,14 +47,28 @@ async function main() {
     console.log('✓ Created index on channel')
 
     // Seed default templates
-    await sql`
-      INSERT INTO message_templates (name, channel, content, is_default)
-      VALUES 
-        ('Default SMS', 'sms', 'Hi {guest_name}! You''re invited to {event_title}. View your invitation: {invite_url}', true),
-        ('Formal SMS', 'sms', 'Dear {guest_name}, You are cordially invited to attend {event_title}. Please view your invitation at: {invite_url}', false),
-        ('Default WhatsApp', 'whatsapp', '🎉 *You''re Invited!*\n\nDear *{guest_name}*,\n\n✨ *{event_title}*\n📅 {event_date}\n📍 {event_location}\n🎟️ {card_type}\n👔 Dress Code: {dress_code}\n\n👇 *View your invitation & QR code:*\n{invite_url}\n\n_Personal & non-transferable._', true)
-      ON CONFLICT DO NOTHING
-    `
+    const defaultTemplates = [
+      {
+        name: 'Default SMS Invitation',
+        channel: 'sms',
+        content: 'Hi {guest_name}! You are invited to {event_title}. Your invitation token: {invite_token}',
+        is_default: true
+      },
+      {
+        name: 'Default WhatsApp Invitation',
+        channel: 'whatsapp',
+        content: 'Hi {guest_name}! You are invited to {event_title}. View your invitation: {invite_url}',
+        is_default: true
+      }
+    ]
+
+    for (const template of defaultTemplates) {
+      await sql`
+        INSERT INTO message_templates (name, channel, content, is_default)
+        VALUES (${template.name}, ${template.channel}, ${template.content}, ${template.is_default})
+        ON CONFLICT DO NOTHING
+      `
+    }
     console.log('✓ Seeded default templates')
 
     console.log('Message templates table added successfully!')

@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
           formattedContact,
           inv.guest_name,
           inv.event_title,
-          inviteUrl,
+          inv.qr_token,
           templateContent || undefined
         )
         
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
           eventLocation: inv.event_location,
           cardType: finalCard,
           dressCode: finalDress,
-          inviteUrl,
+          inviteUrl
         }, templateContent || undefined)
         waLink = whatsappLink(inv.contact, msg)
         await sql`UPDATE invitations SET sent_via_whatsapp=TRUE WHERE id=${inv.id}`

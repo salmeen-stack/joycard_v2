@@ -96,7 +96,7 @@ export async function sendInvitationSms(
   phone: string,
   guestName: string,
   eventTitle: string,
-  inviteUrl: string,
+  inviteToken: string,
   template?: string
 ): Promise<SendInvitationSmsResult> {
   try {
@@ -104,7 +104,7 @@ export async function sendInvitationSms(
       phone,
       guestName,
       eventTitle,
-      inviteUrl,
+      inviteToken,
       template: template || 'default'
     })
     
@@ -114,16 +114,16 @@ export async function sendInvitationSms(
       apiKeyPrefix: process.env.RAFIKI_API_KEY?.substring(0, 10) + '...'
     })
     
-    let message = template || `Hi {guest_name}! You're invited to {event_title}. View your invitation: {invite_url}`
+    let message = template || `Hi {guest_name}! You're invited to {event_title}. Your invitation token: {invite_token}`
     
     // Replace template variables
     message = message
       .replace(/{guest_name}/g, guestName)
       .replace(/{event_title}/g, eventTitle)
-      .replace(/{invite_url}/g, inviteUrl)
+      .replace(/{invite_token}/g, inviteToken)
       .replace(/{guest_name}/gi, guestName)
       .replace(/{event_title}/gi, eventTitle)
-      .replace(/{invite_url}/gi, inviteUrl)
+      .replace(/{invite_token}/gi, inviteToken)
     
     console.log('📝 Final message:', message.substring(0, 100) + '...')
     
