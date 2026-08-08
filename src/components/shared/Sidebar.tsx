@@ -23,6 +23,7 @@ const NAV: Record<Role, { href: string; label: string; icon: string }[]> = {
     { href:'/organizer/templates', label:'Templates',   icon:'📧' },
     { href:'/organizer/guests', label:'Guests',       icon:'🎟️' },
     { href:'/organizer/send',   label:'Send Invites', icon:'📨' },
+    { href:'/organizer/reminders', label:'Reminders',  icon:'🔔' },
   ],
   staff: [
     { href:'/staff',      label:'My Events',  icon:'📅' },

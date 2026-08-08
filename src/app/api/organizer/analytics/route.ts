@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
           COUNT(DISTINCT e.id) as total_events,
           COUNT(DISTINCT g.id) as total_guests,
           COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = true OR i.sent_via_whatsapp = true THEN i.id END) as total_invitations_sent,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = false AND i.sent_via_whatsapp = false THEN i.id END) as total_invitations_pending
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as total_invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = false AND i.sent_via_whatsapp = false THEN i.id END) as total_invitations_pending
         FROM events e
         LEFT JOIN guests g ON g.event_id = e.id
         LEFT JOIN invitations i ON i.guest_id = g.id
@@ -30,8 +30,8 @@ export async function GET(req: NextRequest) {
           COUNT(DISTINCT e.id) as total_events,
           COUNT(DISTINCT g.id) as total_guests,
           COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END) as total_checked_in,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = true OR i.sent_via_whatsapp = true THEN i.id END) as total_invitations_sent,
-          COUNT(DISTINCT CASE WHEN i.sent_via_email = false AND i.sent_via_whatsapp = false THEN i.id END) as total_invitations_pending
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = true OR i.sent_via_whatsapp = true THEN i.id END) as total_invitations_sent,
+          COUNT(DISTINCT CASE WHEN i.sent_via_sms = false AND i.sent_via_whatsapp = false THEN i.id END) as total_invitations_pending
         FROM organizer_assignments oa
         JOIN events e ON e.id = oa.event_id
         LEFT JOIN guests g ON g.event_id = e.id
@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
             e.title as event_title,
             g.name as guest_name,
             g.created_at as guest_added,
-            i.sent_via_email,
+            i.sent_via_sms,
             i.sent_via_whatsapp,
             i.scanned_at
           FROM guests g
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
             e.title as event_title,
             g.name as guest_name,
             g.created_at as guest_added,
-            i.sent_via_email,
+            i.sent_via_sms,
             i.sent_via_whatsapp,
             i.scanned_at
           FROM organizer_assignments oa
