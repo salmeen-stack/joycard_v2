@@ -28,7 +28,7 @@ export default function RemindersPage() {
     try {
       const res = await fetch('/api/events')
       const data = await res.json()
-      setEvents(data)
+      setEvents(data.events || [])
     } catch (err) {
       setError('Failed to load events')
     }
@@ -38,7 +38,7 @@ export default function RemindersPage() {
     try {
       const res = await fetch('/api/templates?channel=sms')
       const data = await res.json()
-      setTemplates(data)
+      setTemplates(Array.isArray(data) ? data : [])
     } catch (err) {
       console.error('Failed to load templates')
     }
