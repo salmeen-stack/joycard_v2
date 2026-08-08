@@ -1,19 +1,25 @@
 // ── Phone Number Formatting Helper ─────────────────────────────
 export function formatPhoneNumber(phone: string): string {
+  console.log('📞 formatPhoneNumber input:', phone)
+  
   // Remove all non-digit characters
   let formatted = phone.replace(/[^\d]/g, '').trim()
+  console.log('📞 After removing non-digits:', formatted)
   
   // Remove leading 0 if present (common in local formats like 0712...)
   if (formatted.startsWith('0')) {
     formatted = formatted.substring(1)
+    console.log('📞 After removing leading 0:', formatted)
   }
   
   // Ensure Tanzania country code if missing (assuming Tanzania numbers)
   // If number is 9 digits after removing leading 0, add 255
   if (formatted.length === 9 && !formatted.startsWith('255')) {
     formatted = '255' + formatted
+    console.log('📞 After adding country code:', formatted)
   }
   
+  console.log('📞 formatPhoneNumber output:', formatted)
   return formatted
 }
 

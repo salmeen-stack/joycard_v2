@@ -55,14 +55,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Format phone number for SMS compatibility
+    console.log('📞 Original contact:', contact)
+    console.log('📞 Original phone:', phone)
     const formattedContact = formatPhoneNumber(contact)
     const formattedPhone = phone ? formatPhoneNumber(phone) : formattedContact
+    console.log('📞 Formatted contact:', formattedContact)
+    console.log('📞 Formatted phone:', formattedPhone)
 
     const [guest] = await sql`
       INSERT INTO guests (event_id, name, contact, phone, channel)
       VALUES (${event_id}, ${name}, ${formattedContact}, ${formattedPhone}, ${channel})
       RETURNING *
     `
+    console.log('📞 Stored guest:', guest)
     const token = generateToken()
     const [invitation] = await sql`
       INSERT INTO invitations (guest_id, card_type, dress_code, qr_token)
