@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
 import { generateToken } from '@/lib/qr'
+import { formatPhoneNumber } from '@/lib/sms'
 
 export async function GET(req: NextRequest) {
   const auth = requireRole(req, 'admin', 'organizer', 'staff')
@@ -53,9 +54,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: `Guest limit of ${asgn.guest_limit} reached` }, { status: 400 })
     }
 
+    // Format phone number for SMS compatibility
+    const formattedContact = formatPhoneNumber(contact)
+    const formattedPhone = phone ? formatPhoneNumber(phone) : formattedContact
+
     const [guest] = await sql`
       INSERT INTO guests (event_id, name, contact, phone, channel)
-      VALUES (${event_id}, ${name}, ${contact}, ${phone}, ${channel})
+      VALUES (${event_id}, ${name}, ${formattedContact}, ${formattedPhone}, ${channel})
       RETURNING *
     `
     const token = generateToken()

@@ -1,3 +1,22 @@
+// ── Phone Number Formatting Helper ─────────────────────────────
+export function formatPhoneNumber(phone: string): string {
+  // Remove all non-digit characters
+  let formatted = phone.replace(/[^\d]/g, '').trim()
+  
+  // Remove leading 0 if present (common in local formats like 0712...)
+  if (formatted.startsWith('0')) {
+    formatted = formatted.substring(1)
+  }
+  
+  // Ensure Tanzania country code if missing (assuming Tanzania numbers)
+  // If number is 9 digits after removing leading 0, add 255
+  if (formatted.length === 9 && !formatted.startsWith('255')) {
+    formatted = '255' + formatted
+  }
+  
+  return formatted
+}
+
 // ── RafikiSMS Integration ─────────────────────────────────────
 
 const API_BASE = 'https://api.rafikisms.com'
@@ -28,8 +47,14 @@ export async function sendSms(options: SendSmsOptions): Promise<SendSmsResponse>
     throw new Error('RAFIKI_API_KEY is not set in environment variables')
   }
 
-  // Format phone number: ensure no + sign, international format
-  let phone = options.phone.replace(/\+/g, '').trim()
+  // Format phone number for RafikiSMS
+  const phone = formatPhoneNumber(options.phone)
+  
+  // Log the formatted phone number
+  console.log('📞 Phone number formatted:', {
+    original: options.phone,
+    formatted: phone
+  })
 
   const response = await fetch(`${API_BASE}/v1/vendor/send-sms`, {
     method: 'POST',

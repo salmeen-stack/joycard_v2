@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
-import { sendInvitationSms } from '@/lib/sms'
+import { sendInvitationSms, formatPhoneNumber } from '@/lib/sms'
 import { whatsappLink, whatsappMessage } from '@/lib/qr'
 import { format } from 'date-fns'
 
@@ -55,8 +55,11 @@ export async function POST(req: NextRequest) {
 
       // Send SMS if requested and channel is SMS
       if (send_sms && inv.channel === 'sms') {
+        // Format phone number for SMS compatibility
+        const formattedContact = formatPhoneNumber(inv.contact)
+        
         smsResult = await sendInvitationSms(
-          inv.contact,
+          formattedContact,
           inv.guest_name,
           inv.event_title,
           inviteUrl,
