@@ -169,8 +169,10 @@ export async function sendInvitationSms(
     console.log('✅ sendSms returned successfully')
     console.log('📦 Response from sendSms:', JSON.stringify(response, null, 2))
     
-    if (response.success && response.status === 'success') {
-      console.log('✅ SMS marked as delivered')
+    // Check if SMS was successfully queued/sent
+    // RafikiSMS may return different status values, but if success=true, it's accepted
+    if (response.success === true) {
+      console.log('✅ SMS marked as delivered (success=true)')
       return {
         success: true,
         status: 'delivered',

@@ -113,9 +113,17 @@ export default function AdminTemplates() {
                   required 
                   value={form.content} 
                   onChange={e=>setForm(f=>({...f,content:e.target.value}))} 
-                  placeholder="Use variables: {guest_name}, {event_title}, {event_date}, {event_location}, {card_type}, {dress_code}, {invite_url}"
+                  placeholder={form.channel === 'sms' 
+                    ? "SMS variables: {guest_name}, {event_title}, {invite_token}" 
+                    : "WhatsApp variables: {guest_name}, {event_title}, {event_date}, {event_location}, {card_type}, {dress_code}, {invite_url}"
+                  }
                 />
-                <p className="text-cream/25 text-xs mt-1">SMS: guest_name, event_title, invite_url | WhatsApp: All variables</p>
+                <p className="text-cream/25 text-xs mt-1">
+                  {form.channel === 'sms' 
+                    ? "SMS: Use {invite_token} for 6-digit token" 
+                    : "WhatsApp: Use {invite_url} for full invitation link"
+                  }
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="is_default" checked={form.is_default} onChange={e=>setForm(f=>({...f,is_default:e.target.checked}))} className="cursor-pointer" />
