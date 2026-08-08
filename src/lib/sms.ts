@@ -69,6 +69,20 @@ export async function sendInvitationSms(
   template?: string
 ): Promise<SendInvitationSmsResult> {
   try {
+    console.log('📱 sendInvitationSms called with:', {
+      phone,
+      guestName,
+      eventTitle,
+      inviteUrl,
+      template: template || 'default'
+    })
+    
+    console.log('🔑 Environment check:', {
+      hasApiKey: !!process.env.RAFIKI_API_KEY,
+      hasSenderId: !!process.env.RAFIKI_SENDER_ID,
+      apiKeyPrefix: process.env.RAFIKI_API_KEY?.substring(0, 10) + '...'
+    })
+    
     let message = template || `Hi {guest_name}! You're invited to {event_title}. View your invitation: {invite_url}`
     
     // Replace template variables
@@ -80,7 +94,11 @@ export async function sendInvitationSms(
       .replace(/{event_title}/gi, eventTitle)
       .replace(/{invite_url}/gi, inviteUrl)
     
+    console.log('📝 Final message:', message.substring(0, 100) + '...')
+    
     const response = await sendSms({ phone, message })
+    
+    console.log('✅ RafikiSMS response:', response)
     
     if (response.success && response.status === 'success') {
       return {
@@ -97,7 +115,7 @@ export async function sendInvitationSms(
       }
     }
   } catch (error) {
-    console.error('Failed to send SMS:', error)
+    console.error('❌ Failed to send SMS:', error)
     return {
       success: false,
       status: 'failed',
