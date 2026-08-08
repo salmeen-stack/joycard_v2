@@ -6,8 +6,9 @@ import toast from 'react-hot-toast'
 interface Template {
   id: number
   name: string
-  subject: string
-  body: string
+  channel: string
+  content: string
+  is_default: boolean
   organizer_id: number | null
   created_at: string
   updated_at: string
@@ -18,7 +19,7 @@ export default function EmailTemplatesPage() {
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null)
-  const [form, setForm] = useState({ name: '', subject: '', body: '' })
+  const [form, setForm] = useState({ name: '', channel: 'sms', content: '', is_default: false })
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -28,7 +29,7 @@ export default function EmailTemplatesPage() {
   async function loadTemplates() {
     setLoading(true)
     try {
-      const res = await fetch('/api/organizer/templates')
+      const res = await fetch('/api/templates')
       if (res.ok) {
         const data = await res.json()
         setTemplates(data.templates || [])
@@ -46,11 +47,12 @@ export default function EmailTemplatesPage() {
     
     try {
       const method = editingTemplate ? 'PUT' : 'POST'
+      const url = editingTemplate ? `/api/templates/${editingTemplate.id}` : '/api/templates'
       const body = editingTemplate 
-        ? { id: editingTemplate.id, ...form }
+        ? { ...form }
         : form
       
-      const res = await fetch('/api/organizer/templates', {
+      const res = await fetch(url, {
         method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
@@ -60,7 +62,7 @@ export default function EmailTemplatesPage() {
         toast.success(editingTemplate ? 'Template updated!' : 'Template created!')
         setShowModal(false)
         setEditingTemplate(null)
-        setForm({ name: '', subject: '', body: '' })
+        setForm({ name: '', channel: 'sms', content: '', is_default: false })
         loadTemplates()
       } else {
         const error = await res.json()
@@ -77,10 +79,8 @@ export default function EmailTemplatesPage() {
     if (!confirm(`Delete template "${name}"? This cannot be undone.`)) return
     
     try {
-      const res = await fetch('/api/organizer/templates', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
+      const res = await fetch(`/api/templates/${id}`, {
+        method: 'DELETE'
       })
       
       if (res.ok) {
@@ -99,8 +99,9 @@ export default function EmailTemplatesPage() {
     setEditingTemplate(template)
     setForm({
       name: template.name,
-      subject: template.subject,
-      body: template.body
+      channel: template.channel,
+      content: template.content,
+      is_default: template.is_default
     })
     setShowModal(true)
   }
@@ -122,7 +123,7 @@ export default function EmailTemplatesPage() {
       <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="flex items-center justify-between mb-10">
         <div>
           <p className="text-cream/30 text-xs tracking-widest uppercase mb-1">Organizer</p>
-          <h1 className="font-display text-4xl font-semibold text-cream">Email Templates</h1>
+          <h1 className="font-display text-4xl font-semibold text-cream">Message Templates</h1>
         </div>
         <button onClick={() => setShowModal(true)} className="btn-gold">
           + Create Template
@@ -143,11 +144,13 @@ export default function EmailTemplatesPage() {
                 <h3 className="font-display text-xl font-semibold text-cream mb-2">
                   {template.name}
                 </h3>
-                <p className="text-gold/60 text-sm mb-1">Subject: {template.subject}</p>
-                {template.organizer_id ? (
-                  <span className="badge badge-teal text-xs">Your Template</span>
+                <p className={`text-sm mb-1 ${template.channel === 'sms' ? 'text-gold/60' : 'text-teal/60'}`}>
+                  {template.channel === 'sms' ? '📱 SMS' : '💬 WhatsApp'}
+                </p>
+                {template.is_default ? (
+                  <span className="badge badge-emerald text-xs">Default</span>
                 ) : (
-                  <span className="badge badge-slate text-xs">System Template</span>
+                  <span className="badge badge-slate text-xs">Custom</span>
                 )}
               </div>
               <div className="flex gap-2">
@@ -171,7 +174,7 @@ export default function EmailTemplatesPage() {
             <div className="bg-white/5 p-3 rounded-lg">
               <p className="text-cream/35 text-xs mb-2">Preview:</p>
               <p className="text-cream/60 text-sm line-clamp-3">
-                {template.body.substring(0, 150)}...
+                {template.content.substring(0, 150)}...
               </p>
             </div>
             
@@ -184,9 +187,9 @@ export default function EmailTemplatesPage() {
 
       {templates.length === 0 && (
         <div className="glass-gold p-16 text-center">
-          <p className="text-4xl mb-4">📧</p>
+          <p className="text-4xl mb-4">�</p>
           <h3 className="font-display text-xl text-cream mb-2">No Templates Yet</h3>
-          <p className="text-cream/35 text-sm mb-6">Create your first email template to get started.</p>
+          <p className="text-cream/35 text-sm mb-6">Create your first message template for SMS or WhatsApp invitations.</p>
           <button onClick={() => setShowModal(true)} className="btn-gold">
             Create Template
           </button>
@@ -220,34 +223,54 @@ export default function EmailTemplatesPage() {
                     required
                     value={form.name}
                     onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="Wedding Invitation"
+                    placeholder="Birthday Invitation"
                   />
                 </div>
                 
                 <div>
-                  <label className="label">Email Subject</label>
-                  <input
+                  <label className="label">Channel</label>
+                  <select
                     className="input"
-                    required
-                    value={form.subject}
-                    onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                    placeholder="You are invited to our wedding!"
-                  />
+                    value={form.channel}
+                    onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}
+                  >
+                    <option value="sms">SMS</option>
+                    <option value="whatsapp">WhatsApp</option>
+                  </select>
                 </div>
                 
                 <div>
-                  <label className="label">Email Body</label>
+                  <label className="label">Content</label>
                   <textarea
                     className="input resize-none"
                     rows={8}
                     required
-                    value={form.body}
-                    onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
-                    placeholder="Dear {{guest_name}},&#10;&#10;You are cordially invited...&#10;&#10;Best regards,&#10;{{organizer_name}}"
+                    value={form.content}
+                    onChange={e => setForm(f => ({ ...f, content: e.target.value }))}
+                    placeholder={form.channel === 'sms' 
+                      ? "Hi {guest_name}! You're invited to {event_title}. Your invitation token: {invite_token}"
+                      : "Hi {guest_name}! You're invited to {event_title}. View your invitation: {invite_url}"
+                    }
                   />
                   <p className="text-cream/25 text-xs mt-2">
-                    Available variables: {'{{guest_name}}'}, {'{{event_title}}'}, {'{{event_date}}'}, {'{{event_location}}'}, {'{{dress_code}}'}, {'{{organizer_name}}'}, {'{{rsvp_date}}'}
+                    {form.channel === 'sms' 
+                      ? "SMS variables: {guest_name}, {event_title}, {invite_token}"
+                      : "WhatsApp variables: {guest_name}, {event_title}, {event_date}, {event_location}, {card_type}, {dress_code}, {invite_url}"
+                    }
                   </p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="is_default"
+                    checked={form.is_default}
+                    onChange={e => setForm(f => ({ ...f, is_default: e.target.checked }))}
+                    className="cursor-pointer"
+                  />
+                  <label htmlFor="is_default" className="text-cream/60 text-sm">
+                    Set as default for this channel
+                  </label>
                 </div>
                 
                 <div className="flex gap-3 pt-4">
@@ -263,7 +286,7 @@ export default function EmailTemplatesPage() {
                     onClick={() => {
                       setShowModal(false)
                       setEditingTemplate(null)
-                      setForm({ name: '', subject: '', body: '' })
+                      setForm({ name: '', channel: 'sms', content: '', is_default: false })
                     }}
                     className="btn-ghost flex-1"
                   >
