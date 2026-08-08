@@ -45,10 +45,16 @@ export default function RemindersPage() {
   async function loadTemplates() {
     try {
       const res = await fetch('/api/templates?channel=sms')
+      if (!res.ok) {
+        console.error('Failed to fetch templates:', res.status)
+        setTemplates([])
+        return
+      }
       const data = await res.json()
-      setTemplates(Array.isArray(data) ? data : [])
+      setTemplates(Array.isArray(data.templates) ? data.templates : [])
     } catch (err) {
       console.error('Failed to load templates')
+      setTemplates([])
     }
   }
 
