@@ -11,12 +11,12 @@ function ManualScanContent() {
   const eventId = sp.get('event')
 
   async function handleManualScan() {
-    const qrCode = prompt('Enter QR code or guest ID:')
-    if (!qrCode) return
+    const token = prompt('Enter 6-digit token or QR code:')
+    if (!token) return
     
     setScanning(true)
     try {
-      const res = await fetch(`/api/invitations/verify/${qrCode}`, {
+      const res = await fetch(`/api/invitations/verify/${token}`, {
         method: 'POST'
       })
       const data = await res.json()
@@ -26,10 +26,10 @@ function ManualScanContent() {
       if (data.valid) {
         toast.success(`✓ ${data.guest?.name || 'Guest'} checked in!`)
       } else {
-        toast.error(data.message || 'Invalid QR code')
+        toast.error(data.message || 'Invalid token')
       }
     } catch (error) {
-      toast.error('Failed to verify QR code')
+      toast.error('Failed to verify token')
     } finally {
       setScanning(false)
     }
@@ -39,8 +39,8 @@ function ManualScanContent() {
     <div className="p-8 max-w-4xl mx-auto">
       <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-10">
         <p className="text-cream/30 text-xs tracking-widest uppercase mb-1">Staff</p>
-        <h1 className="font-display text-4xl font-semibold text-cream">Manual QR Entry</h1>
-        <p className="text-cream/35 text-sm mt-1">Enter QR code manually when camera access is not available</p>
+        <h1 className="font-display text-4xl font-semibold text-cream">Manual Entry</h1>
+        <p className="text-cream/35 text-sm mt-1">Enter 6-digit token or QR code manually when camera access is not available</p>
       </motion.div>
 
       <div className="glass-gold p-6 mb-6">
@@ -59,7 +59,7 @@ function ManualScanContent() {
           disabled={scanning || !eventId}
           className="btn-gold w-full"
         >
-          {scanning ? 'Scanning...' : '🔍 Scan QR Code'}
+          {scanning ? 'Verifying...' : '🔍 Verify Token'}
         </button>
       </div>
 

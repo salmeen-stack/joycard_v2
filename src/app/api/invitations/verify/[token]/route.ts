@@ -27,16 +27,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
   const { token } = await params
 
   try {
+    // Check both qr_token and sms_token to support both QR codes and 6-digit tokens
     const rows = await sql`
       SELECT i.*, g.name AS guest_name, g.event_id,
         e.title AS event_title, e.date AS event_date
       FROM invitations i
       JOIN guests g ON g.id = i.guest_id
       JOIN events e ON e.id = g.event_id
-      WHERE i.qr_token = ${token}
+      WHERE i.qr_token = ${token} OR i.sms_token = ${token}
     `
     if (!rows.length) {
-      return NextResponse.json({ valid: false, alreadyScanned: false, message: 'Invalid QR code — not recognised.' })
+      return NextResponse.json({ valid: false, alreadyScanned: false, message: 'Invalid token — not recognised.' })
     }
     const inv = rows[0]
 
