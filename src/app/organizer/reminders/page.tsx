@@ -143,7 +143,7 @@ export default function RemindersPage() {
 
         {/* Template Selection */}
         <div className="glass-gold p-6">
-          <h3 className="font-display text-base font-semibold text-cream mb-4">SMS Template (Optional)</h3>
+          <h3 className="font-display text-base font-semibold text-cream mb-4">SMS Template</h3>
           <select
             value={selectedTemplate || ''}
             onChange={(e) => setSelectedTemplate(e.target.value ? Number(e.target.value) : null)}
@@ -154,7 +154,13 @@ export default function RemindersPage() {
               <option key={template.id} value={template.id}>{template.name}</option>
             ))}
           </select>
-          <p className="text-cream/25 text-xs mt-2">Leave empty to use default reminder message</p>
+          {selectedTemplate && templates.find(t => t.id === selectedTemplate) && (
+            <div className="mt-3 p-3 bg-white/5 rounded-lg">
+              <p className="text-cream/35 text-xs uppercase tracking-widest mb-1">Preview</p>
+              <p className="text-cream/70 text-sm">{templates.find(t => t.id === selectedTemplate)?.content}</p>
+            </div>
+          )}
+          <p className="text-cream/25 text-xs mt-2">Select a custom template or leave empty to use default reminder message</p>
         </div>
 
         {/* Guest Filter */}

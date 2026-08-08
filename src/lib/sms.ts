@@ -159,22 +159,24 @@ export async function sendInvitationSms(
     let message = template || `Hi {guest_name}! You're invited to {event_title}. Your invitation token: {invite_token}`
     console.log('📝 Original template message:', message)
     
-    // Replace template variables
-    message = message
-      .replace(/{guest_name}/g, guestName)
-      .replace(/{event_title}/g, eventTitle)
-      .replace(/{invite_token}/g, inviteToken)
-      .replace(/{event_date}/g, eventDate || '')
-      .replace(/{event_location}/g, eventLocation || '')
-      .replace(/{card_type}/g, cardType || '')
-      .replace(/{dress_code}/g, dressCode || '')
-      .replace(/{guest_name}/gi, guestName)
-      .replace(/{event_title}/gi, eventTitle)
-      .replace(/{invite_token}/gi, inviteToken)
-      .replace(/{event_date}/gi, eventDate || '')
-      .replace(/{event_location}/gi, eventLocation || '')
-      .replace(/{card_type}/gi, cardType || '')
-      .replace(/{dress_code}/gi, dressCode || '')
+    // Build replacement map with all available variables
+    const replacements: Record<string, string> = {
+      '{guest_name}': guestName,
+      '{event_title}': eventTitle,
+      '{invite_token}': inviteToken,
+      '{event_date}': eventDate || '',
+      '{event_location}': eventLocation || '',
+      '{card_type}': cardType || '',
+      '{dress_code}': dressCode || ''
+    }
+    
+    // Only replace variables that are actually present in the message
+    // This allows messages without variables to be sent as-is
+    for (const [variable, value] of Object.entries(replacements)) {
+      if (message.includes(variable)) {
+        message = message.replace(new RegExp(variable, 'gi'), value)
+      }
+    }
     
     console.log('📝 Final message after variable replacement:', message)
     console.log('📝 Message length:', message.length)
