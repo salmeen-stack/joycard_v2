@@ -28,7 +28,21 @@ export function whatsappMessage(opts: {
   cardType: string
   dressCode: string
   inviteUrl: string
-}): string {
+}, template?: string): string {
   const entry = opts.cardType === 'double' ? 'Double Entry (2 persons)' : 'Single Entry (1 person)'
+  
+  if (template) {
+    // Use custom template with variable replacement
+    return template
+      .replace(/{guest_name}/gi, opts.guestName)
+      .replace(/{event_title}/gi, opts.eventTitle)
+      .replace(/{event_date}/gi, opts.eventDate)
+      .replace(/{event_location}/gi, opts.eventLocation)
+      .replace(/{card_type}/gi, entry)
+      .replace(/{dress_code}/gi, opts.dressCode)
+      .replace(/{invite_url}/gi, opts.inviteUrl)
+  }
+  
+  // Default template
   return `🎉 *You're Invited!*\n\nDear *${opts.guestName}*,\n\n✨ *${opts.eventTitle}*\n📅 ${opts.eventDate}\n📍 ${opts.eventLocation}\n🎟️ ${entry}\n👔 Dress Code: ${opts.dressCode}\n\n👇 *View your invitation & QR code:*\n${opts.inviteUrl}\n\n_Personal & non-transferable._`
 }

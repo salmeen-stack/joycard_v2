@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   try {
-    const { invitation_ids, send_sms, send_whatsapp } = await req.json()
+    const { invitation_ids, send_sms, send_whatsapp, template_id } = await req.json()
     
     if (!invitation_ids || !Array.isArray(invitation_ids) || invitation_ids.length === 0) {
       return NextResponse.json({ error: 'invitation_ids array required' }, { status: 400 })
@@ -18,6 +18,13 @@ export async function POST(req: NextRequest) {
 
     if (!send_sms && !send_whatsapp) {
       return NextResponse.json({ error: 'At least one of send_sms or send_whatsapp must be true' }, { status: 400 })
+    }
+
+    // Fetch template if provided
+    let templateContent = null
+    if (template_id) {
+      const [tmpl] = await sql`SELECT content FROM message_templates WHERE id = ${template_id}`
+      if (tmpl) templateContent = tmpl.content
     }
 
     // Fetch all invitations
@@ -52,7 +59,8 @@ export async function POST(req: NextRequest) {
           inv.contact,
           inv.guest_name,
           inv.event_title,
-          inviteUrl
+          inviteUrl,
+          templateContent || undefined
         )
         
         // Track delivery status if columns exist
@@ -84,7 +92,7 @@ export async function POST(req: NextRequest) {
           cardType: finalCard,
           dressCode: finalDress,
           inviteUrl,
-        })
+        }, templateContent || undefined)
         waLink = whatsappLink(inv.contact, msg)
         await sql`UPDATE invitations SET sent_via_whatsapp=TRUE WHERE id=${inv.id}`
       }

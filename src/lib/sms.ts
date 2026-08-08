@@ -65,10 +65,21 @@ export async function sendInvitationSms(
   phone: string,
   guestName: string,
   eventTitle: string,
-  inviteUrl: string
+  inviteUrl: string,
+  template?: string
 ): Promise<SendInvitationSmsResult> {
   try {
-    const message = `Hi ${guestName}! You're invited to ${eventTitle}. View your invitation: ${inviteUrl}`
+    let message = template || `Hi {guest_name}! You're invited to {event_title}. View your invitation: {invite_url}`
+    
+    // Replace template variables
+    message = message
+      .replace(/{guest_name}/g, guestName)
+      .replace(/{event_title}/g, eventTitle)
+      .replace(/{invite_url}/g, inviteUrl)
+      .replace(/{guest_name}/gi, guestName)
+      .replace(/{event_title}/gi, eventTitle)
+      .replace(/{invite_url}/gi, inviteUrl)
+    
     const response = await sendSms({ phone, message })
     
     if (response.success && response.status === 'success') {

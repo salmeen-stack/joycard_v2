@@ -79,6 +79,17 @@ async function main() {
     UNIQUE(organizer_id, event_id)
   )`
 
+  await sql`CREATE TABLE message_templates (
+    id          SERIAL PRIMARY KEY,
+    name        TEXT NOT NULL,
+    channel     TEXT NOT NULL CHECK (channel IN ('sms','whatsapp')),
+    content     TEXT NOT NULL,
+    is_default  BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  )`
+  await sql`CREATE INDEX idx_templates_channel ON message_templates(channel)`
+
   // Seed admin
   const adminPw = await bcrypt.hash('Admin@1234', 12)
   await sql`

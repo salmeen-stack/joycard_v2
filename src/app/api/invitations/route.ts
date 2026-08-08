@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest) {
   if (auth instanceof NextResponse) return auth
 
   try {
-    const { invitation_id, card_url, card_type, dress_code, send_sms, send_whatsapp } = await req.json()
+    const { invitation_id, card_url, card_type, dress_code, send_sms, send_whatsapp, template_id } = await req.json()
     if (!invitation_id)
       return NextResponse.json({ error: 'invitation_id required' }, { status: 400 })
 
@@ -95,6 +95,13 @@ export async function PUT(req: NextRequest) {
     const finalCard = card_type  ?? inv.card_type
     const finalDress = dress_code ?? inv.dress_code
 
+    // Fetch template if provided
+    let templateContent = null
+    if (template_id) {
+      const [tmpl] = await sql`SELECT content FROM message_templates WHERE id = ${template_id}`
+      if (tmpl) templateContent = tmpl.content
+    }
+
     let smsSent      = false
     let smsResult    = null
     let waLink: string | null = null
@@ -104,7 +111,8 @@ export async function PUT(req: NextRequest) {
         inv.contact,
         inv.guest_name,
         inv.event_title,
-        inviteUrl
+        inviteUrl,
+        templateContent || undefined
       )
       smsSent = smsResult.success
       
@@ -131,7 +139,7 @@ export async function PUT(req: NextRequest) {
         guestName: inv.guest_name, eventTitle: inv.event_title,
         eventDate, eventLocation: inv.event_location,
         cardType: finalCard, dressCode: finalDress, inviteUrl,
-      })
+      }, templateContent || undefined)
       waLink = whatsappLink(inv.contact, msg)
       await sql`UPDATE invitations SET sent_via_whatsapp=TRUE WHERE id=${invitation_id}`
     }

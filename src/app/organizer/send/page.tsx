@@ -6,12 +6,14 @@ import toast from 'react-hot-toast'
 
 interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string; sms_delivery_status?:string; sms_delivery_message?:string }
 interface Asgn  { event_id:number; event_title:string }
+interface Template { id:number; name:string; channel:string; content:string; is_default:boolean }
 
 function Content() {
   const sp = useSearchParams()
   const [selEvent, setSelEvent] = useState(sp.get('event')||'')
   const [guests,   setGuests]   = useState<Guest[]>([])
   const [asgns,    setAsgns]    = useState<Asgn[]>([])
+  const [templates,setTemplates]= useState<Template[]>([])
   const [loading,  setLoading]  = useState(true)
   const [active,   setActive]   = useState<Guest|null>(null)
   const [cardUrl,  setCardUrl]  = useState('')
@@ -20,15 +22,17 @@ function Content() {
   const [uploading, setUploading] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
   const [bulkSending, setBulkSending] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState<number | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [g,a] = await Promise.all([
+      const [g,a,t] = await Promise.all([
         fetch(selEvent?`/api/guests?event_id=${selEvent}`:'/api/guests').then(r=>r.json()),
         fetch('/api/admin/assignments').then(r=>r.json()),
+        fetch('/api/templates').then(r=>r.json()),
       ])
-      setGuests(g.guests||[]); setAsgns(a.assignments||[])
+      setGuests(g.guests||[]); setAsgns(a.assignments||[]); setTemplates(t.templates||[])
     } catch { toast.error('Failed') } finally { setLoading(false) }
   },[selEvent])
   useEffect(()=>{ load() },[load])
@@ -88,14 +92,14 @@ function Content() {
     try {
       const r = await fetch('/api/invitations',{
         method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ invitation_id:active.inv_id, card_url:cardUrl||active.card_url, send_sms:sms, send_whatsapp:wa }),
+        body:JSON.stringify({ invitation_id:active.inv_id, card_url:cardUrl||active.card_url, send_sms:sms, send_whatsapp:wa, template_id:selectedTemplate }),
       })
       const d = await r.json()
       if (!r.ok) { toast.error(d.error); return }
       if (wa && d.whatsappLink) { window.open(d.whatsappLink,'_blank'); toast.success('WhatsApp opened!') }
       if (sms && d.smsSent)  toast.success('SMS sent!')
       if (sms && !d.smsSent) toast.error('SMS failed — check RafikiSMS config')
-      setActive(null); setCardUrl(''); setPreview(''); load()
+      setActive(null); setCardUrl(''); setPreview(''); setSelectedTemplate(null); load()
     } finally { setSending(false) }
   }
 
@@ -107,7 +111,7 @@ function Content() {
     try {
       const r = await fetch('/api/invitations/bulk',{
         method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({ invitation_ids:selectedIds, send_sms:sms, send_whatsapp:wa }),
+        body:JSON.stringify({ invitation_ids:selectedIds, send_sms:sms, send_whatsapp:wa, template_id:selectedTemplate }),
       })
       const d = await r.json()
       if (!r.ok) { toast.error(d.error); return }
@@ -116,6 +120,7 @@ function Content() {
       if (d.summary.sms_failed > 0) toast.error(`${d.summary.sms_failed} SMS failed`)
       
       setSelected(new Set())
+      setSelectedTemplate(null)
       load()
     } finally { setBulkSending(false) }
   }
@@ -185,48 +190,66 @@ function Content() {
               <h2 className="font-display text-2xl font-semibold text-cream mb-1">Send Invitation</h2>
               <p className="text-cream/40 text-sm mb-6">To: <span className="text-gold">{active.name}</span> via <span className="text-teal">{active.channel}</span></p>
 
+              {/* Template selection */}
               <div className="mb-5">
-                <label className="label">Invitation Card (optional)</label>
-                {(preview||active.card_url) ? (
-                  <div className="relative rounded-xl overflow-hidden border border-gold/20 mb-2">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={preview||active.card_url} alt="Card" className="w-full max-h-48 object-cover" />
-                    <button 
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        setCardUrl('')
-                        setPreview('')
-                      }}
-                      className="absolute top-2 right-2 bg-navy-900/80 text-cream/50 hover:text-rose-400 rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
-                      type="button"
-                    >✕</button>
-                  </div>
-                ) : (
-                  <div className="border-2 border-dashed rounded-xl p-7 text-center">
-                    <input
-                      type="file"
-                      id="file-upload"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={handleFileUpload}
-                      disabled={uploading}
-                      className="hidden"
-                    />
-                    <label 
-                      htmlFor="file-upload"
-                      className="cursor-pointer inline-flex flex-col items-center gap-2 text-cream/60 hover:text-gold transition-colors"
-                    >
-                      <div className="text-2xl">📸</div>
-                      <span className="text-sm">
-                        {uploading ? 'Uploading...' : 'Choose Image'}
-                      </span>
-                      <span className="text-xs opacity-50">
-                        JPEG, PNG, WebP, GIF (max 20MB)
-                      </span>
-                    </label>
-                  </div>
-                )}
+                <label className="label">Message Template</label>
+                <select 
+                  className="input" 
+                  value={selectedTemplate || ''} 
+                  onChange={e=>setSelectedTemplate(e.target.value?parseInt(e.target.value):null)}
+                >
+                  <option value="">Default Template</option>
+                  {templates.filter(t => t.channel === active.channel).map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
               </div>
+
+              {/* Image upload - only for WhatsApp */}
+              {active.channel === 'whatsapp' && (
+                <div className="mb-5">
+                  <label className="label">Invitation Card (optional)</label>
+                  {(preview||active.card_url) ? (
+                    <div className="relative rounded-xl overflow-hidden border border-gold/20 mb-2">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={preview||active.card_url} alt="Card" className="w-full max-h-48 object-cover" />
+                      <button 
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          setCardUrl('')
+                          setPreview('')
+                        }}
+                        className="absolute top-2 right-2 bg-navy-900/80 text-cream/50 hover:text-rose-400 rounded-full w-6 h-6 flex items-center justify-center text-xs transition-colors"
+                        type="button"
+                      >✕</button>
+                    </div>
+                  ) : (
+                    <div className="border-2 border-dashed rounded-xl p-7 text-center">
+                      <input
+                        type="file"
+                        id="file-upload"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleFileUpload}
+                        disabled={uploading}
+                        className="hidden"
+                      />
+                      <label 
+                        htmlFor="file-upload"
+                        className="cursor-pointer inline-flex flex-col items-center gap-2 text-cream/60 hover:text-gold transition-colors"
+                      >
+                        <div className="text-2xl">📸</div>
+                        <span className="text-sm">
+                          {uploading ? 'Uploading...' : 'Choose Image'}
+                        </span>
+                        <span className="text-xs opacity-50">
+                          JPEG, PNG, WebP, GIF (max 20MB)
+                        </span>
+                      </label>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {active.qr_token && (
                 <div className="mb-5 p-3 bg-white/5 rounded-xl">
@@ -275,7 +298,7 @@ function Content() {
                     :<span className="badge badge-slate">Not Sent</span>}
                   </td>
                   <td>
-                    <button onClick={()=>{setActive(g);setCardUrl('');setPreview('')}} className="btn-ghost py-1.5 px-4 text-xs">
+                    <button onClick={()=>{setActive(g);setCardUrl('');setPreview('');setSelectedTemplate(null)}} className="btn-ghost py-1.5 px-4 text-xs">
                       {g.sent_via_sms||g.sent_via_whatsapp?'Resend':'Send'}
                     </button>
                   </td>
