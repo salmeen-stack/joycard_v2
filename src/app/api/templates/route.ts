@@ -25,8 +25,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const auth = requireRole(req, 'admin')
+  const auth = requireRole(req, 'admin', 'organizer')
   if (auth instanceof NextResponse) return auth
+  const { user } = auth
 
   try {
     const { name, channel, content, is_default } = await req.json()
