@@ -3,8 +3,9 @@ import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = requireRole(req, 'admin')
+  const auth = requireRole(req, 'admin', 'organizer')
   if (auth instanceof NextResponse) return auth
+  const { user } = auth
 
   try {
     const { name, channel, content, is_default } = await req.json()
@@ -43,8 +44,9 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
-  const auth = requireRole(req, 'admin')
+  const auth = requireRole(req, 'admin', 'organizer')
   if (auth instanceof NextResponse) return auth
+  const { user } = auth
 
   try {
     const templateId = parseInt(params.id)
