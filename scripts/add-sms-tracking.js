@@ -19,7 +19,16 @@ const { neon } = require('@neondatabase/serverless')
 
 async function main() {
   if (!process.env.DATABASE_URL) { console.error('DATABASE_URL not set'); process.exit(1) }
-  const sql = neon(process.env.DATABASE_URL)
+  
+  // Remove channel_binding from connection string if present
+  let dbUrl = process.env.DATABASE_URL
+  dbUrl = dbUrl.replace(/channel_binding=require/g, '')
+  dbUrl = dbUrl.replace(/&$/, '')
+  
+  console.log('Connecting to database...')
+  console.log('Database URL:', dbUrl.replace(/:[^:]*@/, ':***@'))
+  
+  const sql = neon(dbUrl)
   console.log('Adding SMS delivery tracking columns...')
 
   try {

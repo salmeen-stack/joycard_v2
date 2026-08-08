@@ -12,13 +12,13 @@ export async function GET(req: NextRequest) {
         (SELECT COUNT(*)::int FROM users WHERE role='organizer')                  AS total_organizers,
         (SELECT COUNT(*)::int FROM users WHERE role='staff')                      AS total_staff,
         (SELECT COUNT(*)::int FROM guests)                                        AS total_guests,
-        (SELECT COUNT(*)::int FROM invitations WHERE sent_via_sms OR sent_via_whatsapp OR sent_via_email) AS invitations_sent,
+        (SELECT COUNT(*)::int FROM invitations WHERE sent_via_sms OR sent_via_whatsapp) AS invitations_sent,
         (SELECT COUNT(*)::int FROM invitations WHERE scanned_at IS NOT NULL)      AS total_checked_in
     `
     const eventStats = await sql`
       SELECT e.id AS event_id, e.title AS event_title, e.date AS event_date,
         COUNT(DISTINCT g.id)::int AS total_guests,
-        COUNT(DISTINCT CASE WHEN i.sent_via_sms OR i.sent_via_whatsapp OR i.sent_via_email THEN i.id END)::int AS invitations_sent,
+        COUNT(DISTINCT CASE WHEN i.sent_via_sms OR i.sent_via_whatsapp THEN i.id END)::int AS invitations_sent,
         COUNT(DISTINCT CASE WHEN i.scanned_at IS NOT NULL THEN i.id END)::int AS checked_in
       FROM events e
       LEFT JOIN guests g ON g.event_id = e.id
