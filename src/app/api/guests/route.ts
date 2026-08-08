@@ -13,13 +13,27 @@ export async function GET(req: NextRequest) {
   try {
     let guests
     if (user.role === 'admin') {
-      guests = eventId
-        ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE g.event_id=${eventId} ORDER BY g.created_at DESC`
-        : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id ORDER BY g.created_at DESC`
+      try {
+        guests = eventId
+          ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE g.event_id=${eventId} ORDER BY g.created_at DESC`
+          : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id ORDER BY g.created_at DESC`
+      } catch (err) {
+        // Fallback if SMS tracking columns don't exist
+        guests = eventId
+          ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE g.event_id=${eventId} ORDER BY g.created_at DESC`
+          : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id ORDER BY g.created_at DESC`
+      }
     } else if (user.role === 'organizer') {
-      guests = eventId
-        ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id WHERE g.event_id=${eventId} AND EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
-        : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
+      try {
+        guests = eventId
+          ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id WHERE g.event_id=${eventId} AND EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
+          : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, i.sms_delivery_status, i.sms_delivery_message, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
+      } catch (err) {
+        // Fallback if SMS tracking columns don't exist
+        guests = eventId
+          ? await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id WHERE g.event_id=${eventId} AND EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
+          : await sql`SELECT g.*, i.id AS inv_id, i.card_url, i.card_type, i.dress_code, i.qr_token, i.scanned_at, i.sent_via_sms, i.sent_via_whatsapp, e.title AS event_title FROM guests g LEFT JOIN invitations i ON i.guest_id=g.id LEFT JOIN events e ON e.id=g.event_id WHERE EXISTS (SELECT 1 FROM organizer_assignments oa WHERE oa.organizer_id=${user.id} AND oa.event_id=g.event_id) ORDER BY g.created_at DESC`
+      }
     } else {
       // staff — must provide event_id
       guests = eventId
