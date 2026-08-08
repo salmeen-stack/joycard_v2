@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { requireRole } from '@/lib/apiAuth'
-import { generateToken } from '@/lib/qr'
+import { generateToken, generateSmsToken } from '@/lib/qr'
 import { formatPhoneNumber } from '@/lib/sms'
 
 export async function GET(req: NextRequest) {
@@ -69,9 +69,10 @@ export async function POST(req: NextRequest) {
     `
     console.log('📞 Stored guest:', guest)
     const token = generateToken()
+    const smsToken = generateSmsToken()
     const [invitation] = await sql`
-      INSERT INTO invitations (guest_id, card_type, dress_code, qr_token)
-      VALUES (${guest.id}, ${card_type ?? 'single'}, ${dress_code ?? 'Smart Casual'}, ${token})
+      INSERT INTO invitations (guest_id, card_type, dress_code, qr_token, sms_token)
+      VALUES (${guest.id}, ${card_type ?? 'single'}, ${dress_code ?? 'Smart Casual'}, ${token}, ${smsToken})
       RETURNING *
     `
     return NextResponse.json({ guest, invitation }, { status: 201 })

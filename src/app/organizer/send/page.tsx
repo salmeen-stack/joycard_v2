@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useSearchParams } from 'next/navigation'
 import toast from 'react-hot-toast'
 
-interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; card_url?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string; sms_delivery_status?:string; sms_delivery_message?:string }
+interface Guest { id:number; name:string; contact:string; channel:string; card_type?:string; inv_id?:number; qr_token?:string; sms_token?:string; card_url?:string; sent_via_sms?:boolean; sent_via_whatsapp?:boolean; scanned_at?:string; sms_delivery_status?:string; sms_delivery_message?:string }
 interface Asgn  { event_id:number; event_title:string }
 interface Template { id:number; name:string; channel:string; content:string; is_default:boolean }
 
@@ -251,14 +251,17 @@ function Content() {
                 </div>
               )}
 
-              {active.qr_token && (
+              {active.sms_token && active.channel === 'sms' && (
                 <div className="mb-5 p-3 bg-white/5 rounded-xl">
-                  <p className="text-cream/25 text-xs uppercase tracking-widest mb-1">
-                    {active.channel === 'sms' ? 'Invitation Token' : 'Invite Link'}
-                  </p>
-                  <p className="text-teal text-xs break-all">
-                    {active.channel === 'sms' ? active.qr_token : `${base}/invite/${active.qr_token}`}
-                  </p>
+                  <p className="text-cream/25 text-xs uppercase tracking-widest mb-1">Invitation Token</p>
+                  <p className="text-teal text-xs break-all">{active.sms_token}</p>
+                </div>
+              )}
+
+              {active.qr_token && active.channel === 'whatsapp' && (
+                <div className="mb-5 p-3 bg-white/5 rounded-xl">
+                  <p className="text-cream/25 text-xs uppercase tracking-widest mb-1">Invite Link</p>
+                  <p className="text-teal text-xs break-all">{base}/invite/{active.qr_token}</p>
                 </div>
               )}
 

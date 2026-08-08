@@ -1,7 +1,13 @@
+import { v4 as uuidv4 } from 'uuid'
 import QRCode from 'qrcode'
 
 export function generateToken(): string {
-  // Generate a 6-digit numeric token for easy staff verification
+  // Generate UUID for QR codes and WhatsApp links
+  return uuidv4()
+}
+
+export function generateSmsToken(): string {
+  // Generate a 6-digit numeric token for SMS
   return Math.floor(100000 + Math.random() * 900000).toString()
 }
 

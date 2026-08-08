@@ -114,7 +114,7 @@ export async function PUT(req: NextRequest) {
         formattedContact,
         inv.guest_name,
         inv.event_title,
-        inv.qr_token,
+        inv.sms_token || inv.qr_token,
         templateContent || undefined
       )
       smsSent = smsResult.success
