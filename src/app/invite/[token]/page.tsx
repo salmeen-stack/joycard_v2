@@ -65,10 +65,28 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
   const time = format(new Date(inv.event_date),'h:mm a')
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12" style={{backgroundColor: '#14213D'}}>
+    <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12 relative overflow-hidden" style={{backgroundColor: '#14213D'}}>
+      {/* Animated background particles */}
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[100px]" style={{backgroundColor: '#FCA311', opacity: 0.1}} />
-        <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full blur-[80px]" style={{backgroundColor: '#FFFFFF', opacity: 0.05}} />
+        <div className="absolute -top-40 -left-40 w-[500px] h-[500px] rounded-full blur-[100px] animate-pulse" style={{backgroundColor: '#FCA311', opacity: 0.1}} />
+        <div className="absolute -bottom-40 -right-40 w-[400px] h-[400px] rounded-full blur-[80px] animate-pulse" style={{backgroundColor: '#FFFFFF', opacity: 0.05, animationDelay: '1s'}} />
+        {/* Floating particles */}
+        {[...Array(6)].map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full animate-bounce"
+            style={{
+              width: Math.random() * 10 + 5 + 'px',
+              height: Math.random() * 10 + 5 + 'px',
+              backgroundColor: '#FCA311',
+              opacity: 0.3,
+              left: Math.random() * 100 + '%',
+              top: Math.random() * 100 + '%',
+              animationDelay: Math.random() * 2 + 's',
+              animationDuration: Math.random() * 3 + 2 + 's'
+            }}
+          />
+        ))}
       </div>
 
       <motion.div initial={{opacity:0,y:-20}} animate={{opacity:1,y:0}} className="mb-2 z-10">
@@ -78,9 +96,15 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 
       {/* Card flip */}
       <div className="scene w-full max-w-sm z-10" style={{height:520,perspective:'1200px'}}>
-        <motion.div className={`card-inner cursor-pointer ${flipped?'flipped':''}`}
+        <motion.div 
+          className={`card-inner cursor-pointer ${flipped?'flipped':''}`}
           onClick={handleFlip}
-          initial={{scale:.9,opacity:0}} animate={{scale:1,opacity:1}} transition={{duration:.7,type:'spring'}}>
+          initial={{scale:.9,opacity:0}} 
+          animate={{scale:1,opacity:1}} 
+          transition={{duration:.7,type:'spring'}}
+          whileHover={{scale: 1.02}}
+          whileTap={{scale: 0.98}}
+        >
 
           {/* Front */}
           <div className="card-face">
@@ -104,13 +128,42 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
 
           {/* Back */}
           <div className="card-face card-back flex flex-col items-center justify-center p-7" style={{backgroundColor: '#FFFFFF', border: '2px solid #FCA311'}}>
-            <p className="text-xs tracking-widest uppercase mb-5" style={{color: '#000000'}}>Your Entry Code</p>
-            <div className="p-4 rounded-2xl mb-5" style={{backgroundColor: '#E5E5E5', boxShadow: '0 0 30px rgba(252, 163, 17, 0.2)'}}>
-              {qrUrl ? <Image src={qrUrl} alt="QR Code" width={200} height={200} className="rounded-lg" />
+            <motion.p 
+              initial={{opacity: 0, y: -10}} 
+              animate={{opacity: 1, y: 0}} 
+              transition={{delay: 0.1}}
+              className="text-xs tracking-widest uppercase mb-5" 
+              style={{color: '#000000'}}
+            >
+              Your Entry Code
+            </motion.p>
+            <motion.div 
+              initial={{scale: 0.8, opacity: 0}}
+              animate={{scale: 1, opacity: 1}}
+              transition={{delay: 0.2, type: 'spring'}}
+              className="p-4 rounded-2xl mb-5 relative"
+              style={{backgroundColor: '#E5E5E5', boxShadow: '0 0 30px rgba(252, 163, 17, 0.2)'}}
+            >
+              {/* Pulsing glow effect around QR code */}
+              <div className="absolute inset-0 rounded-2xl animate-ping" style={{backgroundColor: '#FCA311', opacity: 0.2}} />
+              {qrUrl ? <Image src={qrUrl} alt="QR Code" width={200} height={200} className="rounded-lg relative z-10" />
                 : <div className="w-48 h-48 flex items-center justify-center"><div className="w-8 h-8 border-2 rounded-full animate-spin" style={{borderColor: '#14213D', borderTopColor: 'transparent'}} /></div>}
-            </div>
-            <h3 className="font-display text-xl font-semibold mb-4" style={{color: '#14213D'}}>{inv.guest_name}</h3>
-            <div className="w-full space-y-2.5">
+            </motion.div>
+            <motion.h3 
+              initial={{opacity: 0, y: 10}}
+              animate={{opacity: 1, y: 0}}
+              transition={{delay: 0.3}}
+              className="font-display text-xl font-semibold mb-4" 
+              style={{color: '#14213D'}}
+            >
+              {inv.guest_name}
+            </motion.h3>
+            <motion.div 
+              initial={{opacity: 0}}
+              animate={{opacity: 1}}
+              transition={{delay: 0.4}}
+              className="w-full space-y-2.5"
+            >
               <div className="flex items-center justify-between px-4 py-2 rounded-xl" style={{backgroundColor: '#E5E5E5'}}>
                 <span className="text-xs uppercase tracking-widest" style={{color: '#000000'}}>Entry</span>
                 <span className={`badge ${inv.card_type==='double'?'badge-teal':'badge-gold'}`}>{inv.card_type==='double'?'2 Persons':'1 Person'}</span>
@@ -123,13 +176,26 @@ export default function InvitePage({ params }: { params: Promise<{ token: string
                 <span className="text-xs uppercase tracking-widest" style={{color: '#000000'}}>Date</span>
                 <span className="text-xs" style={{color: '#14213D'}}>{date}</span>
               </div>
-            </div>
+            </motion.div>
             {inv.scanned_at && (
-              <div className="mt-4 px-4 py-2 rounded-xl w-full text-center" style={{backgroundColor: '#FCA311', opacity: 0.1, border: '1px solid #FCA311'}}>
+              <motion.div 
+                initial={{scale: 0.8, opacity: 0}}
+                animate={{scale: 1, opacity: 1}}
+                className="mt-4 px-4 py-2 rounded-xl w-full text-center" 
+                style={{backgroundColor: '#FCA311', opacity: 0.1, border: '1px solid #FCA311'}}
+              >
                 <p className="text-xs" style={{color: '#FCA311'}}>✓ Checked in at {format(new Date(inv.scanned_at),'h:mm a')}</p>
-              </div>
+              </motion.div>
             )}
-            <p className="text-xs mt-5" style={{color: '#E5E5E5'}}>Tap to flip back</p>
+            <motion.p 
+              initial={{opacity: 0}}
+              animate={{opacity: 1}}
+              transition={{delay: 0.5}}
+              className="text-xs mt-5" 
+              style={{color: '#E5E5E5'}}
+            >
+              Tap to flip back
+            </motion.p>
           </div>
         </motion.div>
       </div>
