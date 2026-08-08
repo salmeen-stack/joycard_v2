@@ -253,8 +253,12 @@ function Content() {
 
               {active.qr_token && (
                 <div className="mb-5 p-3 bg-white/5 rounded-xl">
-                  <p className="text-cream/25 text-xs uppercase tracking-widest mb-1">Invite Link</p>
-                  <p className="text-teal text-xs break-all">{base}/invite/{active.qr_token}</p>
+                  <p className="text-cream/25 text-xs uppercase tracking-widest mb-1">
+                    {active.channel === 'sms' ? 'Invitation Token' : 'Invite Link'}
+                  </p>
+                  <p className="text-teal text-xs break-all">
+                    {active.channel === 'sms' ? active.qr_token : `${base}/invite/${active.qr_token}`}
+                  </p>
                 </div>
               )}
 
