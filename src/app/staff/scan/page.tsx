@@ -15,6 +15,7 @@ function Content() {
   const [recent,   setRecent]   = useState<Recent[]>([])
   const [count,    setCount]    = useState(0)
   const [error,    setError]    = useState('')
+  const [manualToken, setManualToken] = useState('')
   const scanRef  = useRef<{stop:()=>Promise<void>}|null>(null)
   const busy     = useRef(false)
   const scannerActive = useRef(false)
@@ -33,6 +34,13 @@ function Content() {
       setTimeout(()=>{ setResult(null); busy.current=false }, 4000)
     } catch { busy.current=false }
   },[])
+
+  const handleManualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!manualToken.trim()) return
+    await handleScan(manualToken.trim())
+    setManualToken('')
+  }
 
   const start = useCallback(async () => {
     setError('')
@@ -251,6 +259,29 @@ function Content() {
           </div>
         )}
         {scanning && <div className="flex justify-center mt-4"><button onClick={stop} className="btn-ghost px-8">Stop</button></div>}
+      </div>
+
+      {/* Manual Token Input */}
+      <div className="glass-gold p-6 mb-5">
+        <h3 className="font-display text-base font-semibold text-cream mb-4">Manual Token Entry</h3>
+        <form onSubmit={handleManualSubmit} className="flex gap-3">
+          <input
+            type="text"
+            value={manualToken}
+            onChange={(e) => setManualToken(e.target.value)}
+            placeholder="Enter 6-digit token or QR code"
+            className="input flex-1"
+            disabled={busy.current}
+          />
+          <button
+            type="submit"
+            disabled={busy.current || !manualToken.trim()}
+            className="btn-gold px-6"
+          >
+            Verify
+          </button>
+        </form>
+        <p className="text-cream/25 text-xs mt-2">Enter the 6-digit SMS token or QR code to verify guest check-in</p>
       </div>
 
       <AnimatePresence>
