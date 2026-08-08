@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from 'uuid'
 import QRCode from 'qrcode'
 
 export function generateToken(): string {
-  return uuidv4()
+  // Generate a 6-digit numeric token for easy staff verification
+  return Math.floor(100000 + Math.random() * 900000).toString()
 }
 
 export async function generateQRDataURL(token: string, baseUrl: string): Promise<string> {
