@@ -63,7 +63,11 @@ export async function POST(req: NextRequest) {
           inv.guest_name,
           inv.event_title,
           inv.sms_token || inv.qr_token,
-          templateContent || undefined
+          templateContent || undefined,
+          eventDate,
+          inv.event_location,
+          finalCard,
+          finalDress
         )
         
         // Track delivery status if columns exist

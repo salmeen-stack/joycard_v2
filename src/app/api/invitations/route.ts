@@ -170,7 +170,11 @@ export async function PUT(req: NextRequest) {
         inv.guest_name,
         inv.event_title,
         tokenToSend,
-        templateContent || undefined
+        templateContent || undefined,
+        eventDate,
+        inv.event_location,
+        finalCard,
+        finalDress
       )
       console.log('📦 sendInvitationSms result:', JSON.stringify(smsResult, null, 2))
       

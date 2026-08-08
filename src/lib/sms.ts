@@ -130,15 +130,23 @@ export async function sendInvitationSms(
   guestName: string,
   eventTitle: string,
   inviteToken: string,
-  template?: string
+  template?: string,
+  eventDate?: string,
+  eventLocation?: string,
+  cardType?: string,
+  dressCode?: string
 ): Promise<SendInvitationSmsResult> {
-  console.log('� sendInvitationSms START')
+  console.log('🚀 sendInvitationSms START')
   console.log('📥 Input parameters:', {
     phone,
     guestName,
     eventTitle,
     inviteToken,
-    template: template || 'default'
+    template: template || 'default',
+    eventDate,
+    eventLocation,
+    cardType,
+    dressCode
   })
   
   try {
@@ -156,9 +164,17 @@ export async function sendInvitationSms(
       .replace(/{guest_name}/g, guestName)
       .replace(/{event_title}/g, eventTitle)
       .replace(/{invite_token}/g, inviteToken)
+      .replace(/{event_date}/g, eventDate || '')
+      .replace(/{event_location}/g, eventLocation || '')
+      .replace(/{card_type}/g, cardType || '')
+      .replace(/{dress_code}/g, dressCode || '')
       .replace(/{guest_name}/gi, guestName)
       .replace(/{event_title}/gi, eventTitle)
       .replace(/{invite_token}/gi, inviteToken)
+      .replace(/{event_date}/gi, eventDate || '')
+      .replace(/{event_location}/gi, eventLocation || '')
+      .replace(/{card_type}/gi, cardType || '')
+      .replace(/{dress_code}/gi, dressCode || '')
     
     console.log('📝 Final message after variable replacement:', message)
     console.log('📝 Message length:', message.length)
