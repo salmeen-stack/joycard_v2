@@ -27,10 +27,18 @@ export default function RemindersPage() {
   async function loadEvents() {
     try {
       const res = await fetch('/api/events')
+      if (!res.ok) {
+        console.error('Failed to fetch events:', res.status)
+        setError('Failed to load events')
+        setEvents([])
+        return
+      }
       const data = await res.json()
       setEvents(data.events || [])
     } catch (err) {
+      console.error('Error loading events:', err)
       setError('Failed to load events')
+      setEvents([])
     }
   }
 
